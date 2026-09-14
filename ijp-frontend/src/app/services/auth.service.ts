@@ -9,7 +9,7 @@ export interface UserSession {
   name: string;
   email: string;
   employeeId?: string;
-  role: 'EMPLOYEE' | 'ADMIN';
+  role: string;
 }
 
 @Injectable({
@@ -59,7 +59,7 @@ export class AuthService {
   }
 
   public isEmployee(): boolean {
-    return this.currentUserSubject.value?.role === 'EMPLOYEE';
+    return this.currentUserSubject.value !== null && this.currentUserSubject.value.role !== 'ADMIN';
   }
 
   // =========================
@@ -122,7 +122,7 @@ export class AuthService {
           name: `${res.firstName} ${res.lastName}`,
           email: res.email,
           employeeId: res.employeeId,
-          role: 'EMPLOYEE'
+          role: res.role || 'EMPLOYEE'
         };
 
         localStorage.setItem(

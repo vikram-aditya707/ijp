@@ -1,5 +1,5 @@
 <!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+<nav class="navbar navbar-expand-lg navbar-dark shadow-sm" [ngClass]="{'navbar-admin': authService.isAdmin(), 'bg-primary': !authService.isAdmin()}">
   <div class="container">
     <a class="navbar-brand fw-bold" routerLink="/">
       <i class="fa-solid fa-briefcase me-2"></i>IJP Portal

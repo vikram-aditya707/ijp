@@ -20,6 +20,7 @@ export class RegisterComponent {
     employeeId: '',
     dob: '',
     email: '',
+    role: '',
     password: '',
     jobId: 0
   };
@@ -38,6 +39,11 @@ export class RegisterComponent {
     this.errorMessage = '';
     this.successMessage = '';
 
+    if (/\d/.test(this.candidate.firstName) || /\d/.test(this.candidate.lastName)) {
+      this.errorMessage = 'First Name and Last Name must contain letters only (no numbers allowed).';
+      return;
+    }
+
     if (!this.candidate.firstName || !this.candidate.firstName.trim()) {
       this.errorMessage = 'Please enter your First Name.';
       return;
@@ -45,6 +51,11 @@ export class RegisterComponent {
 
     if (!this.candidate.lastName || !this.candidate.lastName.trim()) {
       this.errorMessage = 'Please enter your Last Name.';
+      return;
+    }
+
+    if (!this.candidate.role || !this.candidate.role.trim()) {
+      this.errorMessage = 'Please select a Role.';
       return;
     }
 

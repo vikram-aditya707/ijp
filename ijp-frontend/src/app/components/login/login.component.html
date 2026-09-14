@@ -6,8 +6,8 @@
     </div>
 
     <div class="card-body p-4">
-      <!-- Role Switcher Tabs -->
-      <ul class="nav nav-pills nav-justified mb-4 bg-light p-1 rounded">
+      <!-- Role Switcher Tabs (Only if not logged in as employee) -->
+      <ul *ngIf="!authService.isEmployee()" class="nav nav-pills nav-justified mb-4 bg-light p-1 rounded">
         <li class="nav-item">
           <button class="nav-link fw-semibold" [class.active]="activeTab === 'EMPLOYEE'" (click)="switchTab('EMPLOYEE')">
             Employee Login
@@ -20,18 +20,35 @@
         </li>
       </ul>
 
+      <!-- Already Authenticated Employee Message -->
+      <div *ngIf="authService.isEmployee()" class="text-center py-3">
+        <div class="alert alert-info py-3 mb-3">
+          <i class="fa-solid fa-circle-check text-info display-6 mb-2"></i>
+          <h5 class="fw-bold mb-1">Already Logged In</h5>
+          <p class="small text-muted mb-0">You are logged in as <strong>{{ authService.currentUserValue?.name }}</strong> ({{ authService.currentUserValue?.role }}).</p>
+        </div>
+        <div class="d-grid gap-2">
+          <a routerLink="/employee-dashboard" class="btn btn-primary fw-semibold">
+            <i class="fa-solid fa-gauge me-1"></i> Go to Employee Dashboard
+          </a>
+          <button (click)="onLogout()" class="btn btn-outline-danger fw-semibold">
+            <i class="fa-solid fa-right-from-bracket me-1"></i> Logout
+          </button>
+        </div>
+      </div>
+
       <!-- Success Alert -->
-      <div *ngIf="successMessage" class="alert alert-success shadow-sm mb-4 py-2 small">
+      <div *ngIf="successMessage && !authService.isEmployee()" class="alert alert-success shadow-sm mb-4 py-2 small">
         <i class="fa-solid fa-circle-check me-1"></i>{{ successMessage }}
       </div>
 
       <!-- Error Alert -->
-      <div *ngIf="errorMessage" class="alert alert-danger shadow-sm mb-4 py-2 small">
+      <div *ngIf="errorMessage && !authService.isEmployee()" class="alert alert-danger shadow-sm mb-4 py-2 small">
         <i class="fa-solid fa-circle-exclamation me-1"></i>{{ errorMessage }}
       </div>
 
       <!-- Employee Login Form -->
-      <form *ngIf="activeTab === 'EMPLOYEE'" (ngSubmit)="onEmployeeLogin()" autocomplete="off">
+      <form *ngIf="activeTab === 'EMPLOYEE' && !authService.isEmployee()" (ngSubmit)="onEmployeeLogin()" autocomplete="off">
         <div class="mb-3">
           <label for="empEmail" class="form-label fw-semibold small">Email</label>
           <input type="email" class="form-control" id="empEmail" name="employeeEmail" [(ngModel)]="employeeEmail" placeholder="Enter your company email" required autocomplete="off" />
@@ -55,7 +72,7 @@
       </form>
 
       <!-- Admin Login Form -->
-      <form *ngIf="activeTab === 'ADMIN'" (ngSubmit)="onAdminLogin()" autocomplete="off">
+      <form *ngIf="activeTab === 'ADMIN' && !authService.isEmployee()" (ngSubmit)="onAdminLogin()" autocomplete="off">
         <div class="mb-3">
           <label for="adminEmail" class="form-label fw-semibold small">Admin Email</label>
           <input type="email" class="form-control" id="adminEmail" name="adminUsername" [(ngModel)]="adminUsername" placeholder="Enter your company email" required autocomplete="off" />

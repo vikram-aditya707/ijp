@@ -28,12 +28,26 @@ export class LoginComponent implements OnInit {
   returnUrl: string | null = null;
 
   constructor(
-    private authService: AuthService,
+    public authService: AuthService,
     private router: Router,
     private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
+    if (this.authService.isLoggedIn()) {
+      if (this.authService.isEmployee()) {
+        const returnUrl = this.route.snapshot.queryParams['returnUrl'];
+        if (returnUrl) {
+          this.router.navigateByUrl(returnUrl);
+        } else {
+          this.router.navigate(['/employee-dashboard']);
+        }
+        return;
+      } else if (this.authService.isAdmin()) {
+        this.activeTab = 'ADMIN';
+      }
+    }
+
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || null;
     if (this.route.snapshot.queryParams['registered'] === 'true') {
       this.successMessage = 'Registration successful! Please log in with your email and password.';
@@ -116,5 +130,9 @@ export class LoginComponent implements OnInit {
         this.errorMessage = err.error?.message || 'Invalid Admin credentials. Please try again.';
       }
     });
+  }
+
+  onLogout(): void {
+    this.authService.logout();
   }
 }

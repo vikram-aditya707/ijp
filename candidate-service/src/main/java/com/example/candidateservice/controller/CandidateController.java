@@ -45,7 +45,7 @@ public class CandidateController {
             response.put("firstName", candidate.getFirstName());
             response.put("lastName", candidate.getLastName());
             response.put("email", candidate.getEmail());
-            response.put("role", "EMPLOYEE");
+            response.put("role", candidate.getRole() != null && !candidate.getRole().trim().isEmpty() ? candidate.getRole().trim() : "EMPLOYEE");
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (RuntimeException e) {
             Map<String, String> error = new HashMap<>();

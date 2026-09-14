@@ -36,13 +36,19 @@ export class ApplyComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private candidateService: CandidateService,
-    private authService: AuthService
+    public authService: AuthService
   ) {}
 
   ngOnInit(): void {
+    if (this.authService.isAdmin()) {
+      alert('Administrators and HR Admins are not allowed to apply for job postings.');
+      this.router.navigate(['/admin-dashboard']);
+      return;
+    }
+
     // If an employee is logged in, auto-fill their session details
     const currentUser = this.authService.currentUserValue;
-    if (currentUser && currentUser.role === 'EMPLOYEE') {
+    if (currentUser && currentUser.role !== 'ADMIN') {
       const nameParts = currentUser.name.split(' ');
       this.candidate.firstName = nameParts[0] || '';
       this.candidate.lastName = nameParts.slice(1).join(' ') || '';
@@ -64,6 +70,15 @@ export class ApplyComponent implements OnInit {
   }
 
   onSubmit(): void {
+    if (this.authService.isAdmin()) {
+      this.errorMessage = 'Administrators and HR Admins are not allowed to apply for job postings.';
+      return;
+    }
+    if (/\d/.test(this.candidate.firstName) || /\d/.test(this.candidate.lastName)) {
+      this.errorMessage = 'First Name and Last Name must contain letters only (no numbers allowed).';
+      return;
+    }
+
     if (!this.candidate.email || !this.candidate.email.trim().toLowerCase().endsWith('@company.com')) {
       this.errorMessage = 'Only company email addresses ending with @company.com are allowed.';
       return;

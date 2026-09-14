@@ -45,6 +45,10 @@ export class HomeComponent implements OnInit {
   }
 
   onApplyJob(job: JobPosting): void {
+    if (this.authService.isAdmin()) {
+      alert('Administrators and HR Admins are not allowed to apply for job postings.');
+      return;
+    }
     const targetUrl = `/apply?jobId=${job.id}&code=${encodeURIComponent(job.jobId)}&title=${encodeURIComponent(job.designation)}`;
     
     if (this.authService.isLoggedIn() && this.authService.isEmployee()) {
@@ -52,6 +56,15 @@ export class HomeComponent implements OnInit {
     } else {
       // Prompt employee login and preserve returnUrl to selected job
       this.router.navigate(['/login'], { queryParams: { returnUrl: targetUrl } });
+    }
+  }
+
+  closeJob(id: number): void {
+    if (confirm('Are you sure you want to close this job posting? Candidates will no longer be able to apply.')) {
+      this.jobService.closeJob(id).subscribe({
+        next: () => this.fetchOpenJobs(),
+        error: (err) => alert('Failed to close job.')
+      });
     }
   }
 

@@ -1,14 +1,14 @@
-<div class="bg-primary text-white py-3 mb-4 shadow-sm">
+<div class="bg-admin-dark py-4 mb-4 shadow-sm">
   <div class="container d-flex justify-content-between align-items-center">
     <div>
-      <h3 class="fw-bold mb-1"><i class="fa-solid fa-gauge-high me-2"></i>Admin Dashboard</h3>
-      <p class="small text-white-50 mb-0">Manage job postings, candidates, and designation master data</p>
+      <h3 class="fw-bold mb-1 text-white"><i class="fa-solid fa-shield-halved text-admin-accent me-2"></i>HR Admin Management Console</h3>
+      <p class="small text-white-50 mb-0">Oversee internal vacancies, manage candidate applications, and maintain designation master data</p>
     </div>
     <div class="d-flex gap-2">
-      <a routerLink="/add-job" class="btn btn-light text-primary btn-sm fw-semibold">
+      <a routerLink="/add-job" class="btn btn-admin-primary btn-sm fw-semibold px-3">
         <i class="fa-solid fa-plus me-1"></i> Add New Job
       </a>
-      <button class="btn btn-outline-light btn-sm" (click)="logout()">
+      <button class="btn btn-outline-light btn-sm px-3" (click)="logout()">
         <i class="fa-solid fa-right-from-bracket me-1"></i> Logout
       </button>
     </div>
@@ -16,32 +16,89 @@
 </div>
 
 <div class="container mb-5">
+
+  <!-- OVERVIEW STATS CARDS BAR -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="card stat-card border-0 shadow-sm bg-white p-3 border-start border-4 border-success">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <span class="text-muted extra-small text-uppercase fw-bold">Active Open Jobs</span>
+            <h3 class="fw-bold text-dark mb-0 mt-1">{{ activeJobsCount }}</h3>
+          </div>
+          <div class="bg-success text-white rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+            <i class="fa-solid fa-briefcase fs-5"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card stat-card border-0 shadow-sm bg-white p-3 border-start border-4 border-warning">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <span class="text-muted extra-small text-uppercase fw-bold">Closed Positions</span>
+            <h3 class="fw-bold text-dark mb-0 mt-1">{{ closedJobsCount }}</h3>
+          </div>
+          <div class="bg-warning text-dark rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+            <i class="fa-solid fa-lock fs-5"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card stat-card border-0 shadow-sm bg-white p-3 border-start border-4 border-indigo" style="border-left-color: #6366f1 !important;">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <span class="text-muted extra-small text-uppercase fw-bold">Total Job Postings</span>
+            <h3 class="fw-bold text-dark mb-0 mt-1">{{ jobs.length }}</h3>
+          </div>
+          <div class="badge-admin text-white rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+            <i class="fa-solid fa-list-check fs-5"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card stat-card border-0 shadow-sm bg-white p-3 border-start border-4 border-info">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <span class="text-muted extra-small text-uppercase fw-bold">Active Designations</span>
+            <h3 class="fw-bold text-dark mb-0 mt-1">{{ activeDesignationsCount }}</h3>
+          </div>
+          <div class="bg-info text-white rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+            <i class="fa-solid fa-tags fs-5"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Nav Tabs -->
   <ul class="nav nav-tabs mb-4">
     <li class="nav-item">
-      <button class="nav-link fw-semibold" [ngClass]="{'active': activeTab === 'jobs'}" (click)="activeTab = 'jobs'">
-        <i class="fa-solid fa-list-check me-1"></i> Job Postings ({{ jobs.length }})
+      <button class="nav-link fw-semibold" [ngClass]="{'active text-admin-accent border-bottom-0': activeTab === 'jobs'}" (click)="activeTab = 'jobs'">
+        <i class="fa-solid fa-list-check me-1"></i> Job Management ({{ jobs.length }})
       </button>
     </li>
     <li class="nav-item">
-      <button class="nav-link fw-semibold" [ngClass]="{'active': activeTab === 'designations'}" (click)="activeTab = 'designations'">
+      <button class="nav-link fw-semibold" [ngClass]="{'active text-admin-accent border-bottom-0': activeTab === 'designations'}" (click)="activeTab = 'designations'">
         <i class="fa-solid fa-tags me-1"></i> Designation Master ({{ designations.length }})
       </button>
     </li>
   </ul>
 
-  <!-- Tab 1: Job Postings -->
-  <div *ngIf="activeTab === 'jobs'" class="card shadow-sm border rounded-3">
-    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-      <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-briefcase me-2"></i>Active Job Postings</h5>
-      <button class="btn btn-sm btn-outline-primary" (click)="loadAllJobs()">
-        <i class="fa-solid fa-arrows-rotate me-1"></i> Refresh
+  <!-- Tab 1: Job Postings Management -->
+  <div *ngIf="activeTab === 'jobs'" class="card admin-card shadow-sm">
+    <div class="card-header bg-admin-header py-3 d-flex justify-content-between align-items-center">
+      <h5 class="fw-bold mb-0 text-white"><i class="fa-solid fa-briefcase text-admin-accent me-2"></i>Job Vacancy Management Console</h5>
+      <button class="btn btn-sm btn-outline-light" (click)="loadAllJobs()">
+        <i class="fa-solid fa-arrows-rotate me-1"></i> Refresh List
       </button>
     </div>
     <div class="card-body p-0">
 
       <div *ngIf="isLoadingJobs" class="text-center py-5">
-        <div class="spinner-border text-primary" role="status"></div>
+        <div class="spinner-border text-admin-accent" role="status"></div>
         <p class="mt-2 text-muted small">Loading job postings...</p>
       </div>
 
@@ -66,13 +123,13 @@
               <th>Experience</th>
               <th>Salary Range</th>
               <th>Status</th>
-              <th class="text-end pe-4">Actions</th>
+              <th class="text-end pe-4">Management Actions</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let job of jobs">
               <td class="ps-4 fw-semibold text-secondary">#{{ job.id }}</td>
-              <td><span class="badge bg-primary px-2 py-1">{{ job.jobId }}</span></td>
+              <td><span class="badge badge-admin px-2 py-1">{{ job.jobId }}</span></td>
               <td class="fw-bold text-dark">{{ job.designation }}</td>
               <td class="small"><i class="fa-solid fa-location-dot text-danger me-1"></i>{{ job.location }}</td>
               <td class="small">{{ job.experience }}</td>
@@ -84,10 +141,10 @@
               </td>
               <td class="text-end pe-4">
                 <div class="btn-group btn-group-sm">
-                  <a [routerLink]="['/candidates', job.id]" class="btn btn-outline-primary" title="View Candidates">
+                  <a [routerLink]="['/candidates', job.id]" class="btn btn-admin-primary" title="Manage Candidates">
                     <i class="fa-solid fa-users me-1"></i> Candidates
                   </a>
-                  <button *ngIf="job.status === 'OPEN'" class="btn btn-outline-warning" (click)="closeJob(job.id!)" title="Close Job">
+                  <button *ngIf="job.status === 'OPEN'" class="btn btn-outline-warning" (click)="closeJob(job.id!)" title="Close Job Posting">
                     <i class="fa-solid fa-lock me-1"></i> Close
                   </button>
                   <button class="btn btn-outline-danger" (click)="deleteJob(job)" title="Delete Job Posting">
@@ -104,9 +161,9 @@
   </div>
 
   <!-- Tab 2: Designation Master Data -->
-  <div *ngIf="activeTab === 'designations'" class="card shadow-sm border rounded-3">
-    <div class="card-header bg-white py-3 border-bottom">
-      <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-tags me-2"></i>Designation Master Data Management</h5>
+  <div *ngIf="activeTab === 'designations'" class="card admin-card shadow-sm">
+    <div class="card-header bg-admin-header py-3">
+      <h5 class="fw-bold mb-0 text-white"><i class="fa-solid fa-tags text-admin-accent me-2"></i>Designation Master Data Management</h5>
     </div>
     <div class="card-body p-4">
 
@@ -115,7 +172,7 @@
         <div class="col-md-8">
           <div class="input-group">
             <input type="text" class="form-control" [(ngModel)]="newDesignationName" placeholder="Enter new designation name" (keyup.enter)="addDesignation()" />
-            <button class="btn btn-primary fw-semibold px-4" (click)="addDesignation()">
+            <button class="btn btn-admin-primary fw-semibold px-4" (click)="addDesignation()">
               <i class="fa-solid fa-plus me-1"></i> Add Designation
             </button>
           </div>
@@ -161,7 +218,7 @@
                 <div class="btn-group btn-group-sm">
                   <!-- Normal Mode Action Buttons -->
                   <ng-container *ngIf="editingDesignationId !== desig.id">
-                    <button class="btn btn-outline-primary" (click)="startEditDesignation(desig)" title="Edit Designation">
+                    <button class="btn btn-outline-admin" (click)="startEditDesignation(desig)" title="Edit Designation">
                       <i class="fa-solid fa-pen-to-square me-1"></i> Edit
                     </button>
                     <button class="btn" [ngClass]="{'btn-outline-danger': desig.status === 'ACTIVE', 'btn-outline-success': desig.status === 'INACTIVE'}" (click)="toggleDesignationStatus(desig.id!, desig.status)" title="Toggle Status">

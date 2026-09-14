@@ -60,7 +60,8 @@
           </div>
         </div>
 
-        <div class="mb-4">
+        <!-- Password Field ONLY shown for unauthenticated users -->
+        <div class="mb-4" *ngIf="!authService.isEmployee()">
           <label for="password" class="form-label fw-semibold small">Account Password <span class="text-danger">*</span></label>
           <input type="password" class="form-control" id="password" name="password" [(ngModel)]="candidate.password" placeholder="Enter employee account password" autocomplete="new-password" />
           <div class="form-text extra-small text-muted">Password used for employee login authentication.</div>

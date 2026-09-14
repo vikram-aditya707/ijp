@@ -38,8 +38,17 @@ public class CandidateService {
         if (candidate.getFirstName() == null || candidate.getFirstName().trim().isEmpty()) {
             throw new RuntimeException("First Name is required!");
         }
+        if (candidate.getFirstName().matches(".*\\d.*")) {
+            throw new RuntimeException("First Name must contain letters only and cannot contain numbers.");
+        }
         if (candidate.getLastName() == null || candidate.getLastName().trim().isEmpty()) {
             throw new RuntimeException("Last Name is required!");
+        }
+        if (candidate.getLastName().matches(".*\\d.*")) {
+            throw new RuntimeException("Last Name must contain letters only and cannot contain numbers.");
+        }
+        if (candidate.getRole() == null || candidate.getRole().trim().isEmpty()) {
+            throw new RuntimeException("Role is required!");
         }
         if (candidate.getDob() == null || candidate.getDob().trim().isEmpty()) {
             throw new RuntimeException("Date of Birth is required!");
@@ -76,6 +85,7 @@ public class CandidateService {
 
         candidate.setFirstName(candidate.getFirstName().trim());
         candidate.setLastName(candidate.getLastName().trim());
+        candidate.setRole(candidate.getRole().trim());
         candidate.setDob(candidate.getDob().trim());
         candidate.setEmployeeId(empId);
         candidate.setEmail(email);
@@ -100,8 +110,21 @@ public class CandidateService {
             throw new RuntimeException("Only company email addresses ending with @company.com are allowed.");
         }
 
+        // 2. Reject Admin Application Submission
+        if ("admin@company.com".equalsIgnoreCase(email) || (candidate.getRole() != null && "ADMIN".equalsIgnoreCase(candidate.getRole().trim()))) {
+            throw new RuntimeException("Administrators and HR Admins are not allowed to apply for job postings.");
+        }
+
         if (candidate.getEmployeeId() == null || candidate.getEmployeeId().trim().isEmpty()) {
             throw new RuntimeException("Employee ID is required!");
+        }
+
+        if (candidate.getFirstName() != null && candidate.getFirstName().matches(".*\\d.*")) {
+            throw new RuntimeException("First Name must contain letters only and cannot contain numbers.");
+        }
+
+        if (candidate.getLastName() != null && candidate.getLastName().matches(".*\\d.*")) {
+            throw new RuntimeException("Last Name must contain letters only and cannot contain numbers.");
         }
 
         String empId = candidate.getEmployeeId().trim();
@@ -135,13 +158,16 @@ public class CandidateService {
             }
         }
 
-        // Preserve candidate password if candidate profile already exists
+        // Preserve candidate password & role if candidate profile already exists
         if (!existingByEmail.isEmpty() || !existingByEmpId.isEmpty()) {
             Candidate existingCand = !existingByEmail.isEmpty() ? existingByEmail.get(0) : existingByEmpId.get(0);
             if ((password == null || password.isEmpty()) && existingCand.getPassword() != null) {
                 candidate.setPassword(existingCand.getPassword());
             } else if (password != null && !password.isEmpty()) {
                 candidate.setPassword(password);
+            }
+            if ((candidate.getRole() == null || candidate.getRole().trim().isEmpty()) && existingCand.getRole() != null) {
+                candidate.setRole(existingCand.getRole());
             }
         } else {
             // New candidate account requires password

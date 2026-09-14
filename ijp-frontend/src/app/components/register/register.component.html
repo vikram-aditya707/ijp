@@ -49,6 +49,20 @@
           </div>
         </div>
 
+        <div class="mb-3">
+          <label for="regRole" class="form-label fw-semibold small">Job Role / Title <span class="text-danger">*</span></label>
+          <select class="form-select" id="regRole" name="role" [(ngModel)]="candidate.role" required>
+            <option value="" disabled selected>Select your role</option>
+            <option value="Software Engineer">Software Engineer</option>
+            <option value="Java Developer">Java Developer</option>
+            <option value="Angular Developer">Angular Developer</option>
+            <option value="Full Stack Developer">Full Stack Developer</option>
+            <option value="Backend Engineer">Backend Engineer</option>
+            <option value="QA Engineer">QA Engineer</option>
+            <option value="EMPLOYEE">Employee (General)</option>
+          </select>
+        </div>
+
         <div class="row">
           <div class="col-md-6 mb-3">
             <label for="regPassword" class="form-label fw-semibold small">Password <span class="text-danger">*</span></label>

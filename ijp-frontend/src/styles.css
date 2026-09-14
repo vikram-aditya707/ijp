@@ -89,3 +89,85 @@ body {
 .extra-small {
   font-size: 0.75rem;
 }
+
+/* ==================================================
+   ADMIN VISUAL THEME — DARK NAVY & INDIGO ACCENT
+   ================================================== */
+:root {
+  --admin-navy-dark: #0f172a;
+  --admin-slate-dark: #1e293b;
+  --admin-indigo-accent: #6366f1;
+  --admin-indigo-hover: #4f46e5;
+  --admin-header-slate: #334155;
+}
+
+/* Admin Navbar */
+.navbar-admin {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+  border-bottom: 3px solid #6366f1 !important;
+}
+
+.bg-admin-dark {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+  color: #ffffff !important;
+}
+
+.bg-admin-header {
+  background-color: #334155 !important;
+  color: #ffffff !important;
+}
+
+.btn-admin-primary {
+  background-color: #6366f1 !important;
+  border-color: #6366f1 !important;
+  color: #ffffff !important;
+}
+
+.btn-admin-primary:hover, .btn-admin-primary:focus {
+  background-color: #4f46e5 !important;
+  border-color: #4f46e5 !important;
+  color: #ffffff !important;
+}
+
+.btn-outline-admin {
+  color: #6366f1 !important;
+  border-color: #6366f1 !important;
+}
+
+.btn-outline-admin:hover {
+  background-color: #6366f1 !important;
+  color: #ffffff !important;
+}
+
+.text-admin-accent {
+  color: #6366f1 !important;
+}
+
+.badge-admin {
+  background-color: #6366f1 !important;
+  color: #ffffff !important;
+}
+
+.admin-card {
+  border: 1px solid #cbd5e1;
+  border-top: 3px solid #6366f1;
+  border-radius: 8px;
+  background-color: #ffffff;
+}
+
+.admin-hero {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: #ffffff;
+  padding: 3rem 0;
+  border-bottom: 3px solid #6366f1;
+}
+
+.stat-card {
+  border-radius: 10px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}

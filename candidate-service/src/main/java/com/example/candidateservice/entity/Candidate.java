@@ -24,6 +24,7 @@ public class Candidate {
     private String dob;
     private String email;
     private String password;
+    private String role; // e.g. "Software Engineer", "Java Developer", "EMPLOYEE", etc.
     private Long jobId; // Stored as plain Long ID (No JPA entity relationship across microservices)
     private String status; // "APPLIED", "SHORTLISTED", "INTERVIEW_SCHEDULED", "SELECTED", "REJECTED"
 
@@ -54,6 +55,19 @@ public class Candidate {
         this.status = "APPLIED";
     }
 
+    public Candidate(Long id, String firstName, String lastName, String employeeId, String dob, String email, String password, String role, Long jobId) {
+        this.id = id;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.employeeId = employeeId;
+        this.dob = dob;
+        this.email = email;
+        this.password = password;
+        this.role = role;
+        this.jobId = jobId;
+        this.status = "APPLIED";
+    }
+
     public Candidate(Long id, String firstName, String lastName, String employeeId, String dob, String email, Long jobId, String status) {
         this.id = id;
         this.firstName = firstName;
@@ -73,6 +87,19 @@ public class Candidate {
         this.dob = dob;
         this.email = email;
         this.password = password;
+        this.jobId = jobId;
+        this.status = status != null ? status : "APPLIED";
+    }
+
+    public Candidate(Long id, String firstName, String lastName, String employeeId, String dob, String email, String password, String role, Long jobId, String status) {
+        this.id = id;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.employeeId = employeeId;
+        this.dob = dob;
+        this.email = email;
+        this.password = password;
+        this.role = role;
         this.jobId = jobId;
         this.status = status != null ? status : "APPLIED";
     }
@@ -131,6 +158,14 @@ public class Candidate {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 
     public Long getJobId() {

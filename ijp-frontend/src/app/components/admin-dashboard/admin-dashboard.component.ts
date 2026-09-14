@@ -40,6 +40,18 @@ export class AdminDashboardComponent implements OnInit {
     private router: Router
   ) {}
 
+  get activeJobsCount(): number {
+    return this.jobs.filter(j => j.status === 'OPEN').length;
+  }
+
+  get closedJobsCount(): number {
+    return this.jobs.filter(j => j.status === 'CLOSED').length;
+  }
+
+  get activeDesignationsCount(): number {
+    return this.designations.filter(d => d.status === 'ACTIVE').length;
+  }
+
   ngOnInit(): void {
     if (!this.authService.isAdmin()) {
       this.router.navigate(['/login']);
