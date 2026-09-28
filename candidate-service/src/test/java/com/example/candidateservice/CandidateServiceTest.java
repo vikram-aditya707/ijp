@@ -15,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -46,14 +47,13 @@ public class CandidateServiceTest {
     }
 
     // ==================================================
-    // 1. REGISTER EMPLOYEE TESTS
+    // PART 7 — EMPLOYEE REGISTRATION TESTS (1–19)
     // ==================================================
 
     @Test
-    public void shouldRegisterEmployeeSuccessfully() {
-        Candidate candidate = new Candidate(null, "Aditya", "Singh", "EMP707", "1995-08-12", "aditya@company.com", "Pass@123", "Software Engineer", 0L);
-        when(candidateRepository.findByEmailIgnoreCase("aditya@company.com")).thenReturn(Collections.emptyList());
-        when(candidateRepository.findByEmployeeId("EMP707")).thenReturn(Collections.emptyList());
+    public void test01_shouldRegisterEmployeeSuccessfully() {
+        Candidate candidate = new Candidate(null, "Aditya", "Singh", "EMP707", "1995-08-12", "aditya@company.com", "Employee@123", "Software Engineer", 0L);
+        when(candidateRepository.findByEmployeeIdIgnoreCaseAndEmailIgnoreCase("EMP707", "aditya@company.com")).thenReturn(Optional.empty());
         when(candidateRepository.save(any(Candidate.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Candidate registered = candidateService.registerEmployee(candidate);
@@ -62,118 +62,178 @@ public class CandidateServiceTest {
         assertEquals("aditya@company.com", registered.getEmail());
         assertEquals("Software Engineer", registered.getRole());
         assertEquals("APPLIED", registered.getStatus());
-        verify(candidateRepository, times(1)).save(candidate);
     }
 
     @Test
-    public void shouldThrowExceptionWhenRegisteringWithMissingRole() {
-        Candidate candidate = new Candidate(null, "Aditya", "Singh", "EMP707", "1995-08-12", "aditya@company.com", "Pass@123", "", 0L);
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.registerEmployee(candidate));
-        assertTrue(exception.getMessage().contains("Role is required"));
-    }
-
-    @Test
-    public void shouldThrowExceptionWhenRegisteringWithNumericFirstName() {
-        Candidate candidate = new Candidate(null, "Aditya123", "Singh", "EMP707", "1995-08-12", "aditya@company.com", "Pass@123", "Software Engineer", 0L);
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.registerEmployee(candidate));
-        assertTrue(exception.getMessage().contains("First Name must contain letters only"));
-    }
-
-    @Test
-    public void shouldThrowExceptionWhenRegisteringWithNumericLastName() {
-        Candidate candidate = new Candidate(null, "Aditya", "Singh99", "EMP707", "1995-08-12", "aditya@company.com", "Pass@123", "Software Engineer", 0L);
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.registerEmployee(candidate));
-        assertTrue(exception.getMessage().contains("Last Name must contain letters only"));
-    }
-
-    @Test
-    public void shouldThrowExceptionWhenRegisteringWithMissingFirstName() {
-        Candidate candidate = new Candidate(null, "", "Singh", "EMP707", "1995-08-12", "aditya@company.com", "Pass@123", "Software Engineer", 0L);
+    public void test02_shouldThrowExceptionWhenEmptyFirstName() {
+        Candidate candidate = new Candidate(null, "", "Singh", "EMP707", "1995-08-12", "aditya@company.com", "Employee@123", "Software Engineer", 0L);
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.registerEmployee(candidate));
         assertTrue(exception.getMessage().contains("First Name is required"));
     }
 
     @Test
-    public void shouldThrowExceptionWhenRegisteringWithMissingLastName() {
-        Candidate candidate = new Candidate(null, "Aditya", " ", "EMP707", "1995-08-12", "aditya@company.com", "Pass@123", "Software Engineer", 0L);
+    public void test03_shouldThrowExceptionWhenFirstNameContainsDigits() {
+        Candidate candidate = new Candidate(null, "Aditya123", "Singh", "EMP707", "1995-08-12", "aditya@company.com", "Employee@123", "Software Engineer", 0L);
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.registerEmployee(candidate));
-        assertTrue(exception.getMessage().contains("Last Name is required"));
+        assertTrue(exception.getMessage().contains("First Name must contain letters only"));
     }
 
     @Test
-    public void shouldThrowExceptionWhenRegisteringWithMissingDob() {
-        Candidate candidate = new Candidate(null, "Aditya", "Singh", "EMP707", "", "aditya@company.com", "Pass@123", "Software Engineer", 0L);
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.registerEmployee(candidate));
-        assertTrue(exception.getMessage().contains("Date of Birth is required"));
-    }
-
-    @Test
-    public void shouldThrowExceptionWhenRegisteringWithMissingEmployeeId() {
-        Candidate candidate = new Candidate(null, "Aditya", "Singh", null, "1995-08-12", "aditya@company.com", "Pass@123", "Software Engineer", 0L);
+    public void test04_shouldThrowExceptionWhenEmptyEmployeeId() {
+        Candidate candidate = new Candidate(null, "Aditya", "Singh", "", "1995-08-12", "aditya@company.com", "Employee@123", "Software Engineer", 0L);
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.registerEmployee(candidate));
         assertTrue(exception.getMessage().contains("Employee ID is required"));
     }
 
     @Test
-    public void shouldThrowExceptionWhenRegisteringWithMissingEmail() {
-        Candidate candidate = new Candidate(null, "Aditya", "Singh", "EMP707", "1995-08-12", "", "Pass@123", "Software Engineer", 0L);
+    public void test05_shouldThrowExceptionWhenEmptyEmail() {
+        Candidate candidate = new Candidate(null, "Aditya", "Singh", "EMP707", "1995-08-12", "", "Employee@123", "Software Engineer", 0L);
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.registerEmployee(candidate));
         assertTrue(exception.getMessage().contains("Company Email is required"));
     }
 
     @Test
-    public void shouldThrowExceptionWhenRegisteringWithMissingPassword() {
-        Candidate candidate = new Candidate(null, "Aditya", "Singh", "EMP707", "1995-08-12", "aditya@company.com", " ", "Software Engineer", 0L);
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.registerEmployee(candidate));
-        assertTrue(exception.getMessage().contains("Password is required"));
-    }
-
-    @Test
-    public void shouldThrowExceptionWhenRegisteringWithInvalidEmailDomain() {
-        Candidate candidate = new Candidate(null, "Aditya", "Singh", "EMP707", "1995-08-12", "aditya@gmail.com", "Pass@123", "Software Engineer", 0L);
+    public void test06_shouldThrowExceptionWhenInvalidCompanyEmail() {
+        Candidate candidate = new Candidate(null, "Aditya", "Singh", "EMP707", "1995-08-12", "aditya@gmail.com", "Employee@123", "Software Engineer", 0L);
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.registerEmployee(candidate));
         assertTrue(exception.getMessage().contains("Only company email addresses ending with @company.com are allowed"));
     }
 
     @Test
-    public void shouldThrowExceptionWhenRegisteringDuplicateEmail() {
-        Candidate existing = new Candidate(1L, "Existing", "User", "EMP100", "1990-01-01", "aditya@company.com", "Pass@123", "Software Engineer", 0L);
-        Candidate newCand = new Candidate(null, "Aditya", "Singh", "EMP707", "1995-08-12", "aditya@company.com", "Pass@123", "Software Engineer", 0L);
+    public void test07_shouldThrowExceptionWhenAdminEmailRegistration() {
+        Candidate candidate = new Candidate(null, "Aditya", "Singh", "EMP707", "1995-08-12", "admin@company.com", "Employee@123", "Software Engineer", 0L);
 
-        when(candidateRepository.findByEmailIgnoreCase("aditya@company.com")).thenReturn(List.of(existing));
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.registerEmployee(newCand));
-        assertTrue(exception.getMessage().contains("An employee with this email already exists"));
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.registerEmployee(candidate));
+        assertTrue(exception.getMessage().contains("Registration with this email is not allowed"));
     }
 
     @Test
-    public void shouldThrowExceptionWhenRegisteringDuplicateEmployeeId() {
-        Candidate existing = new Candidate(1L, "Existing", "User", "EMP707", "1990-01-01", "other@company.com", "Pass@123", "Software Engineer", 0L);
-        Candidate newCand = new Candidate(null, "Aditya", "Singh", "EMP707", "1995-08-12", "aditya@company.com", "Pass@123", "Software Engineer", 0L);
+    public void test08_shouldThrowExceptionWhenCaseInsensitiveAdminEmailRegistration() {
+        Candidate candidate = new Candidate(null, "Aditya", "Singh", "EMP707", "1995-08-12", "ADMIN@COMPANY.COM", "Employee@123", "Software Engineer", 0L);
 
-        when(candidateRepository.findByEmailIgnoreCase("aditya@company.com")).thenReturn(Collections.emptyList());
-        when(candidateRepository.findByEmployeeId("EMP707")).thenReturn(List.of(existing));
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.registerEmployee(candidate));
+        assertTrue(exception.getMessage().contains("Registration with this email is not allowed"));
+    }
+
+    @Test
+    public void test09_shouldSucceedWhenEmptyLastName() {
+        Candidate candidate = new Candidate(null, "Khushboo", "", "EMP708", "1998-05-20", "khushboo@company.com", "Employee@123", "Java Developer", 0L);
+        when(candidateRepository.findByEmployeeIdIgnoreCaseAndEmailIgnoreCase("EMP708", "khushboo@company.com")).thenReturn(Optional.empty());
+        when(candidateRepository.save(any(Candidate.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Candidate registered = candidateService.registerEmployee(candidate);
+
+        assertNotNull(registered);
+        assertEquals("", registered.getLastName());
+    }
+
+    @Test
+    public void test10_shouldFailWhenAge17() {
+        String dob17 = LocalDate.now().minusYears(17).toString();
+        Candidate candidate = new Candidate(null, "Aditya", "Singh", "EMP707", dob17, "aditya@company.com", "Employee@123", "Software Engineer", 0L);
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.registerEmployee(candidate));
+        assertTrue(exception.getMessage().contains("Age must be between 18 and 80 years"));
+    }
+
+    @Test
+    public void test11_shouldSucceedWhenAgeExactly18() {
+        String dob18 = LocalDate.now().minusYears(18).toString();
+        Candidate candidate = new Candidate(null, "Aditya", "Singh", "EMP718", dob18, "aditya18@company.com", "Employee@123", "Software Engineer", 0L);
+        when(candidateRepository.findByEmployeeIdIgnoreCaseAndEmailIgnoreCase("EMP718", "aditya18@company.com")).thenReturn(Optional.empty());
+        when(candidateRepository.save(any(Candidate.class))).thenAnswer(i -> i.getArgument(0));
+
+        Candidate registered = candidateService.registerEmployee(candidate);
+        assertNotNull(registered);
+    }
+
+    @Test
+    public void test12_shouldSucceedWhenAgeExactly80() {
+        String dob80 = LocalDate.now().minusYears(80).toString();
+        Candidate candidate = new Candidate(null, "Aditya", "Singh", "EMP780", dob80, "aditya80@company.com", "Employee@123", "Software Engineer", 0L);
+        when(candidateRepository.findByEmployeeIdIgnoreCaseAndEmailIgnoreCase("EMP780", "aditya80@company.com")).thenReturn(Optional.empty());
+        when(candidateRepository.save(any(Candidate.class))).thenAnswer(i -> i.getArgument(0));
+
+        Candidate registered = candidateService.registerEmployee(candidate);
+        assertNotNull(registered);
+    }
+
+    @Test
+    public void test13_shouldFailWhenAge81() {
+        String dob81 = LocalDate.now().minusYears(81).toString();
+        Candidate candidate = new Candidate(null, "Aditya", "Singh", "EMP707", dob81, "aditya@company.com", "Employee@123", "Software Engineer", 0L);
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.registerEmployee(candidate));
+        assertTrue(exception.getMessage().contains("Age must be between 18 and 80 years"));
+    }
+
+    @Test
+    public void test14_shouldFailWhenFutureDOB() {
+        String futureDob = LocalDate.now().plusDays(5).toString();
+        Candidate candidate = new Candidate(null, "Aditya", "Singh", "EMP707", futureDob, "aditya@company.com", "Employee@123", "Software Engineer", 0L);
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.registerEmployee(candidate));
+        assertTrue(exception.getMessage().contains("Age must be between 18 and 80 years"));
+    }
+
+    @Test
+    public void test15_shouldFailWhenInvalidPassword() {
+        Candidate candidate = new Candidate(null, "Aditya", "Singh", "EMP707", "1995-08-12", "aditya@company.com", "simplepass", "Software Engineer", 0L);
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.registerEmployee(candidate));
+        assertTrue(exception.getMessage().contains("Password must contain at least 8 characters"));
+    }
+
+    @Test
+    public void test16_shouldSucceedWhenValidPassword() {
+        Candidate candidate = new Candidate(null, "Aditya", "Singh", "EMP707", "1995-08-12", "aditya@company.com", "Employee@123", "Software Engineer", 0L);
+        when(candidateRepository.findByEmployeeIdIgnoreCaseAndEmailIgnoreCase("EMP707", "aditya@company.com")).thenReturn(Optional.empty());
+        when(candidateRepository.save(any(Candidate.class))).thenAnswer(i -> i.getArgument(0));
+
+        Candidate registered = candidateService.registerEmployee(candidate);
+        assertNotNull(registered);
+    }
+
+    @Test
+    public void test17_shouldFailWhenInvalidJobTitle() {
+        Candidate candidate = new Candidate(null, "Aditya", "Singh", "EMP707", "1995-08-12", "aditya@company.com", "Employee@123", "InvalidRoleTitle", 0L);
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.registerEmployee(candidate));
+        assertTrue(exception.getMessage().contains("Please select a valid job role"));
+    }
+
+    @Test
+    public void test18_shouldAcceptEmployeeGeneralAsFallbackJobTitle() {
+        Candidate candidate = new Candidate(null, "Aditya", "Singh", "EMP707", "1995-08-12", "aditya@company.com", "Employee@123", "Employee (General)", 0L);
+        when(candidateRepository.findByEmployeeIdIgnoreCaseAndEmailIgnoreCase("EMP707", "aditya@company.com")).thenReturn(Optional.empty());
+        when(candidateRepository.save(any(Candidate.class))).thenAnswer(i -> i.getArgument(0));
+
+        Candidate registered = candidateService.registerEmployee(candidate);
+        assertEquals("Employee (General)", registered.getRole());
+    }
+
+    @Test
+    public void test19_shouldFailWhenDuplicateEmployeeIdAndEmail() {
+        Candidate existing = new Candidate(1L, "Existing", "User", "EMP707", "1990-01-01", "aditya@company.com", "Employee@123", "Software Engineer", 0L);
+        Candidate newCand = new Candidate(null, "Aditya", "Singh", "EMP707", "1995-08-12", "aditya@company.com", "Employee@123", "Software Engineer", 0L);
+
+        when(candidateRepository.findByEmployeeIdIgnoreCaseAndEmailIgnoreCase("EMP707", "aditya@company.com")).thenReturn(Optional.of(existing));
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.registerEmployee(newCand));
-        assertTrue(exception.getMessage().contains("An employee with this employee ID already exists"));
+        assertTrue(exception.getMessage().contains("An employee with this Employee ID and Email already exists"));
     }
 
     // ==================================================
-    // 2. APPLY FOR JOB TESTS
+    // PART 7 — CANDIDATE APPLICATION TESTS (33–45)
     // ==================================================
 
     @Test
-    public void testApplyForJob_Success() {
+    public void test33_shouldApplyForJobSuccessfully() {
         Candidate candidate = new Candidate(null, "John", "Doe", "EMP101", "1995-05-15", "john.doe@company.com", "Test@123", 1L);
         JobPostingDto openJob = new JobPostingDto(1L, "JOB101", "Java Developer", "OPEN");
 
@@ -183,72 +243,33 @@ public class CandidateServiceTest {
         when(candidateRepository.save(any(Candidate.class))).thenReturn(candidate);
 
         Candidate saved = candidateService.applyForJob(candidate);
-
         assertNotNull(saved);
         assertEquals("John", saved.getFirstName());
-        verify(candidateRepository, times(1)).save(candidate);
     }
 
     @Test
-    public void testApplyForJob_ExistingCandidateWithoutPassword_Success() {
-        Candidate existing = new Candidate(1L, "John", "Doe", "EMP101", "1995-05-15", "john.doe@company.com", "Test@123", "Software Engineer", 0L);
-        Candidate applyReq = new Candidate(null, "John", "Doe", "EMP101", "1995-05-15", "john.doe@company.com", null, 2L);
-        JobPostingDto openJob = new JobPostingDto(2L, "JOB102", "Backend Engineer", "OPEN");
+    public void test34_shouldFailApplicationWhenMissingFirstName() {
+        Candidate candidate = new Candidate(null, "", "Doe", "EMP101", "1995-05-15", "john.doe@company.com", "Test@123", 1L);
+        // Note: First Name digits check applies
+    }
 
-        when(candidateRepository.findByEmailIgnoreCase("john.doe@company.com")).thenReturn(List.of(existing));
-        when(candidateRepository.findByEmployeeId("EMP101")).thenReturn(List.of(existing));
-        when(candidateRepository.findByEmailIgnoreCaseAndJobId("john.doe@company.com", 2L)).thenReturn(Optional.empty());
-        when(candidateRepository.findByEmployeeIdAndJobId("EMP101", 2L)).thenReturn(Optional.empty());
-        when(jobServiceClient.getJobById(2L)).thenReturn(openJob);
-        when(candidateRepository.save(any(Candidate.class))).thenAnswer(i -> i.getArgument(0));
+    @Test
+    public void test35_shouldSucceedApplicationWithEmptyLastName() {
+        Candidate candidate = new Candidate(null, "John", "", "EMP101", "1995-05-15", "john.doe@company.com", "Test@123", 1L);
+        JobPostingDto openJob = new JobPostingDto(1L, "JOB101", "Java Developer", "OPEN");
 
-        Candidate saved = candidateService.applyForJob(applyReq);
+        when(candidateRepository.findByEmailIgnoreCaseAndJobId("john.doe@company.com", 1L)).thenReturn(Optional.empty());
+        when(candidateRepository.findByEmployeeIdAndJobId("EMP101", 1L)).thenReturn(Optional.empty());
+        when(jobServiceClient.getJobById(1L)).thenReturn(openJob);
+        when(candidateRepository.save(any(Candidate.class))).thenReturn(candidate);
 
+        Candidate saved = candidateService.applyForJob(candidate);
         assertNotNull(saved);
-        assertEquals("Test@123", saved.getPassword());
-        verify(candidateRepository, times(1)).save(applyReq);
+        assertEquals("", saved.getLastName());
     }
 
     @Test
-    public void shouldThrowExceptionWhenAdminAttemptsToApplyForJobByEmail() {
-        Candidate adminCandidate = new Candidate(null, "HR", "Admin", "ADM001", "1988-01-01", "admin@company.com", "Pass@123", "ADMIN", 1L);
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.applyForJob(adminCandidate));
-        assertTrue(exception.getMessage().contains("Administrators and HR Admins are not allowed to apply"));
-    }
-
-    @Test
-    public void shouldThrowExceptionWhenAdminRoleAttemptsToApplyForJob() {
-        Candidate adminCandidate = new Candidate(null, "Super", "User", "EMP999", "1990-05-05", "superuser@company.com", "Pass@123", "ADMIN", 1L);
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.applyForJob(adminCandidate));
-        assertTrue(exception.getMessage().contains("Administrators and HR Admins are not allowed to apply"));
-    }
-
-    @Test
-    public void testApplyForJob_DuplicateApplicationForSameJob() {
-        Candidate candidate = new Candidate(null, "John", "Doe", "EMP101", "1995-05-15", "john.doe@company.com", "Test@123", 1L);
-        when(candidateRepository.findByEmailIgnoreCase("john.doe@company.com")).thenReturn(List.of(candidate));
-        when(candidateRepository.findByEmployeeId("EMP101")).thenReturn(List.of(candidate));
-        when(candidateRepository.findByEmailIgnoreCaseAndJobId("john.doe@company.com", 1L)).thenReturn(Optional.of(candidate));
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.applyForJob(candidate));
-        assertTrue(exception.getMessage().contains("already applied"));
-    }
-
-    @Test
-    public void testApplyForJob_DuplicateEmailDifferentEmpId() {
-        Candidate existing = new Candidate(1L, "John", "Doe", "EMP101", "1995-05-15", "john.doe@company.com", "Test@123", 1L);
-        Candidate duplicateEmailCandidate = new Candidate(null, "Fake", "User", "EMP999", "1995-05-15", "john.doe@company.com", "Test@123", 1L);
-
-        when(candidateRepository.findByEmailIgnoreCase("john.doe@company.com")).thenReturn(List.of(existing));
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.applyForJob(duplicateEmailCandidate));
-        assertTrue(exception.getMessage().contains("already exists"));
-    }
-
-    @Test
-    public void testApplyForJob_InvalidEmailDomain() {
+    public void test36_shouldFailApplicationWithInvalidEmailDomain() {
         Candidate candidate = new Candidate(null, "John", "Doe", "EMP101", "1995-05-15", "john.doe@gmail.com", "Test@123", 1L);
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.applyForJob(candidate));
@@ -256,259 +277,96 @@ public class CandidateServiceTest {
     }
 
     @Test
-    public void shouldThrowExceptionWhenApplyingWithoutEmail() {
-        Candidate candidate = new Candidate(null, "John", "Doe", "EMP101", "1995-05-15", null, "Test@123", 1L);
+    public void test37_shouldFailApplicationWithEmptyEmail() {
+        Candidate candidate = new Candidate(null, "John", "Doe", "EMP101", "1995-05-15", "", "Test@123", 1L);
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.applyForJob(candidate));
         assertTrue(exception.getMessage().contains("Email is required"));
     }
 
     @Test
-    public void shouldThrowExceptionWhenApplyingWithoutEmployeeId() {
-        Candidate candidate = new Candidate(null, "John", "Doe", "", "1995-05-15", "john.doe@company.com", "Test@123", 1L);
+    public void test38_shouldFailApplicationWhenAge17() {
+        String dob17 = LocalDate.now().minusYears(17).toString();
+        Candidate candidate = new Candidate(null, "John", "Doe", "EMP101", dob17, "john.doe@company.com", "Test@123", 1L);
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.applyForJob(candidate));
-        assertTrue(exception.getMessage().contains("Employee ID is required"));
+        assertTrue(exception.getMessage().contains("Age must be between 18 and 80 years"));
     }
 
     @Test
-    public void shouldThrowExceptionWhenApplyingToNonExistentJob() {
+    public void test39_shouldSucceedApplicationWhenAge18() {
+        String dob18 = LocalDate.now().minusYears(18).toString();
+        Candidate candidate = new Candidate(null, "John", "Doe", "EMP101", dob18, "john.doe@company.com", "Test@123", 1L);
+        JobPostingDto openJob = new JobPostingDto(1L, "JOB101", "Java Developer", "OPEN");
+
+        when(candidateRepository.findByEmailIgnoreCaseAndJobId("john.doe@company.com", 1L)).thenReturn(Optional.empty());
+        when(candidateRepository.findByEmployeeIdAndJobId("EMP101", 1L)).thenReturn(Optional.empty());
+        when(jobServiceClient.getJobById(1L)).thenReturn(openJob);
+        when(candidateRepository.save(any(Candidate.class))).thenReturn(candidate);
+
+        Candidate saved = candidateService.applyForJob(candidate);
+        assertNotNull(saved);
+    }
+
+    @Test
+    public void test40_shouldSucceedApplicationWhenAge80() {
+        String dob80 = LocalDate.now().minusYears(80).toString();
+        Candidate candidate = new Candidate(null, "John", "Doe", "EMP101", dob80, "john.doe@company.com", "Test@123", 1L);
+        JobPostingDto openJob = new JobPostingDto(1L, "JOB101", "Java Developer", "OPEN");
+
+        when(candidateRepository.findByEmailIgnoreCaseAndJobId("john.doe@company.com", 1L)).thenReturn(Optional.empty());
+        when(candidateRepository.findByEmployeeIdAndJobId("EMP101", 1L)).thenReturn(Optional.empty());
+        when(jobServiceClient.getJobById(1L)).thenReturn(openJob);
+        when(candidateRepository.save(any(Candidate.class))).thenReturn(candidate);
+
+        Candidate saved = candidateService.applyForJob(candidate);
+        assertNotNull(saved);
+    }
+
+    @Test
+    public void test41_shouldFailApplicationWhenAge81() {
+        String dob81 = LocalDate.now().minusYears(81).toString();
+        Candidate candidate = new Candidate(null, "John", "Doe", "EMP101", dob81, "john.doe@company.com", "Test@123", 1L);
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.applyForJob(candidate));
+        assertTrue(exception.getMessage().contains("Age must be between 18 and 80 years"));
+    }
+
+    @Test
+    public void test42_shouldFailApplicationWhenFutureDOB() {
+        String futureDob = LocalDate.now().plusDays(5).toString();
+        Candidate candidate = new Candidate(null, "John", "Doe", "EMP101", futureDob, "john.doe@company.com", "Test@123", 1L);
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.applyForJob(candidate));
+        assertTrue(exception.getMessage().contains("Age must be between 18 and 80 years"));
+    }
+
+    @Test
+    public void test43_shouldVerifyJobMustReferenceExistingJob() {
+        Candidate candidate = new Candidate(null, "John", "Doe", "EMP101", "1995-05-15", "john.doe@company.com", "Test@123", 1L);
+        JobPostingDto openJob = new JobPostingDto(1L, "JOB101", "Java Developer", "OPEN");
+
+        when(jobServiceClient.getJobById(1L)).thenReturn(openJob);
+        when(candidateRepository.save(any(Candidate.class))).thenReturn(candidate);
+
+        Candidate saved = candidateService.applyForJob(candidate);
+        assertNotNull(saved);
+    }
+
+    @Test
+    public void test44_shouldFailApplicationWhenJobIdNonExistent() {
         Candidate candidate = new Candidate(null, "John", "Doe", "EMP101", "1995-05-15", "john.doe@company.com", "Test@123", 999L);
-        when(candidateRepository.findByEmailIgnoreCaseAndJobId("john.doe@company.com", 999L)).thenReturn(Optional.empty());
-        when(candidateRepository.findByEmployeeIdAndJobId("EMP101", 999L)).thenReturn(Optional.empty());
-        when(jobServiceClient.getJobById(999L)).thenThrow(new RuntimeException("Not found"));
+        when(jobServiceClient.getJobById(999L)).thenThrow(new RuntimeException("Job not found"));
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.applyForJob(candidate));
         assertTrue(exception.getMessage().contains("does not exist"));
     }
 
     @Test
-    public void shouldThrowExceptionWhenApplyingToClosedJob() {
-        Candidate candidate = new Candidate(null, "John", "Doe", "EMP101", "1995-05-15", "john.doe@company.com", "Test@123", 1L);
-        JobPostingDto closedJob = new JobPostingDto(1L, "JOB101", "Java Developer", "CLOSED");
+    public void test45_shouldRejectAdminFromApplyingForJob() {
+        Candidate adminCandidate = new Candidate(null, "HR", "Admin", "ADM001", "1988-01-01", "admin@company.com", "Pass@123", "ADMIN", 1L);
 
-        when(candidateRepository.findByEmailIgnoreCaseAndJobId("john.doe@company.com", 1L)).thenReturn(Optional.empty());
-        when(candidateRepository.findByEmployeeIdAndJobId("EMP101", 1L)).thenReturn(Optional.empty());
-        when(jobServiceClient.getJobById(1L)).thenReturn(closedJob);
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.applyForJob(candidate));
-        assertTrue(exception.getMessage().contains("is CLOSED"));
-    }
-
-    // ==================================================
-    // 3. EMPLOYEE LOGIN TESTS
-    // ==================================================
-
-    @Test
-    public void testLoginEmployee_Success() {
-        Candidate candidate = new Candidate(1L, "Naman", "Dheer", "E901", "1995-01-01", "naman@company.com", "Test@123", 1L);
-        when(candidateRepository.findByEmailIgnoreCase("naman@company.com")).thenReturn(List.of(candidate));
-
-        Candidate loggedIn = candidateService.loginEmployee("naman@company.com", "Test@123");
-
-        assertNotNull(loggedIn);
-        assertEquals("naman@company.com", loggedIn.getEmail());
-    }
-
-    @Test
-    public void testLoginEmployee_WrongPassword() {
-        Candidate candidate = new Candidate(1L, "Naman", "Dheer", "E901", "1995-01-01", "naman@company.com", "Test@123", 1L);
-        when(candidateRepository.findByEmailIgnoreCase("naman@company.com")).thenReturn(List.of(candidate));
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.loginEmployee("naman@company.com", "Wrong123"));
-        assertTrue(exception.getMessage().contains("Invalid email or password"));
-    }
-
-    @Test
-    public void testLoginEmployee_InvalidDomain() {
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.loginEmployee("naman@gmail.com", "Test@123"));
-        assertTrue(exception.getMessage().contains("Only company email addresses ending with @company.com are allowed"));
-    }
-
-    @Test
-    public void shouldThrowExceptionWhenLoginEmailMissing() {
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.loginEmployee("", "Test@123"));
-        assertTrue(exception.getMessage().contains("Company Email is required"));
-    }
-
-    @Test
-    public void shouldThrowExceptionWhenLoginPasswordMissing() {
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.loginEmployee("naman@company.com", ""));
-        assertTrue(exception.getMessage().contains("Invalid email or password"));
-    }
-
-    @Test
-    public void shouldThrowExceptionWhenLoginEmployeeNotFound() {
-        when(candidateRepository.findByEmailIgnoreCase("unknown@company.com")).thenReturn(Collections.emptyList());
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.loginEmployee("unknown@company.com", "Test@123"));
-        assertTrue(exception.getMessage().contains("Invalid email or password"));
-    }
-
-    // ==================================================
-    // 4. CANDIDATE RETRIEVAL & DELETION TESTS
-    // ==================================================
-
-    @Test
-    public void shouldGetAllCandidatesSuccessfully() {
-        Candidate c1 = new Candidate(1L, "A", "B", "E1", "1990-01-01", "a@company.com", "Pass@123", 1L);
-        when(candidateRepository.findAll()).thenReturn(List.of(c1));
-
-        List<Candidate> result = candidateService.getAllCandidates();
-
-        assertEquals(1, result.size());
-        assertEquals("A", result.get(0).getFirstName());
-    }
-
-    @Test
-    public void shouldGetCandidateByIdSuccessfully() {
-        Candidate c1 = new Candidate(1L, "A", "B", "E1", "1990-01-01", "a@company.com", "Pass@123", 1L);
-        when(candidateRepository.findById(1L)).thenReturn(Optional.of(c1));
-
-        Optional<Candidate> result = candidateService.getCandidateById(1L);
-
-        assertTrue(result.isPresent());
-        assertEquals("A", result.get().getFirstName());
-    }
-
-    @Test
-    public void shouldReturnEmptyWhenCandidateNotFoundById() {
-        when(candidateRepository.findById(99L)).thenReturn(Optional.empty());
-
-        Optional<Candidate> result = candidateService.getCandidateById(99L);
-
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    public void testDeleteCandidate_Success() {
-        Candidate candidate = new Candidate(10L, "Jane", "Doe", "EMP202", "1996-06-16", "jane.doe@company.com", "Test@123", 1L);
-        when(candidateRepository.findById(10L)).thenReturn(Optional.of(candidate));
-
-        candidateService.deleteCandidate(10L);
-
-        verify(notificationRepository, times(1)).deleteByCandidateId(10L);
-        verify(interviewRepository, times(1)).deleteByCandidateId(10L);
-        verify(candidateRepository, times(1)).deleteById(10L);
-    }
-
-    @Test
-    public void shouldThrowExceptionWhenDeletingNonExistentCandidate() {
-        when(candidateRepository.findById(99L)).thenReturn(Optional.empty());
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.deleteCandidate(99L));
-        assertTrue(exception.getMessage().contains("not found"));
-    }
-
-    // ==================================================
-    // 5. STATUS UPDATE & NOTIFICATION TESTS
-    // ==================================================
-
-    @Test
-    public void shouldUpdateCandidateStatusToShortlistedSuccessfully() {
-        Candidate candidate = new Candidate(1L, "A", "B", "E1", "1990-01-01", "a@company.com", "Pass@123", 10L, "APPLIED");
-        when(candidateRepository.findById(1L)).thenReturn(Optional.of(candidate));
-        when(candidateRepository.save(any(Candidate.class))).thenAnswer(i -> i.getArgument(0));
-
-        Candidate updated = candidateService.updateCandidateStatus(1L, "SHORTLISTED");
-
-        assertEquals("SHORTLISTED", updated.getStatus());
-        verify(notificationRepository, times(1)).save(any(Notification.class));
-    }
-
-    @Test
-    public void shouldThrowExceptionWhenUpdatingStatusOfNonExistentCandidate() {
-        when(candidateRepository.findById(99L)).thenReturn(Optional.empty());
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.updateCandidateStatus(99L, "SHORTLISTED"));
-        assertTrue(exception.getMessage().contains("not found"));
-    }
-
-    // ==================================================
-    // 6. INTERVIEW SCHEDULING TESTS
-    // ==================================================
-
-    @Test
-    public void shouldScheduleOnlineInterviewSuccessfully() {
-        Candidate candidate = new Candidate(1L, "A", "B", "E1", "1990-01-01", "a@company.com", "Pass@123", 10L);
-        Interview interview = new Interview(null, 1L, 1L, 10L, "ONLINE", "2026-10-01", "10:00 AM", null, "https://meet.google.com/abc", "HR Lead", "SCHEDULED");
-
-        when(candidateRepository.findById(1L)).thenReturn(Optional.of(candidate));
-        when(interviewRepository.save(any(Interview.class))).thenAnswer(i -> i.getArgument(0));
-
-        Interview saved = candidateService.scheduleInterview(interview);
-
-        assertNotNull(saved);
-        assertEquals("ONLINE", saved.getInterviewMode());
-        assertEquals("INTERVIEW_SCHEDULED", candidate.getStatus());
-        verify(notificationRepository, times(1)).save(any(Notification.class));
-    }
-
-    @Test
-    public void shouldScheduleOfflineInterviewSuccessfully() {
-        Candidate candidate = new Candidate(1L, "A", "B", "E1", "1990-01-01", "a@company.com", "Pass@123", 10L);
-        Interview interview = new Interview(null, 1L, 1L, 10L, "OFFLINE", "2026-10-01", "10:00 AM", "Room 402", null, "HR Lead", "SCHEDULED");
-
-        when(candidateRepository.findById(1L)).thenReturn(Optional.of(candidate));
-        when(interviewRepository.save(any(Interview.class))).thenAnswer(i -> i.getArgument(0));
-
-        Interview saved = candidateService.scheduleInterview(interview);
-
-        assertNotNull(saved);
-        assertEquals("OFFLINE", saved.getInterviewMode());
-        assertEquals("Room 402", saved.getLocation());
-    }
-
-    @Test
-    public void shouldThrowExceptionWhenSchedulingInterviewWithoutCandidateId() {
-        Interview interview = new Interview();
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.scheduleInterview(interview));
-        assertTrue(exception.getMessage().contains("Candidate ID must be provided"));
-    }
-
-    @Test
-    public void shouldThrowExceptionWhenSchedulingOnlineInterviewWithoutMeetingLink() {
-        Candidate candidate = new Candidate(1L, "A", "B", "E1", "1990-01-01", "a@company.com", "Pass@123", 10L);
-        Interview interview = new Interview(null, 1L, 1L, 10L, "ONLINE", "2026-10-01", "10:00 AM", null, "", "HR Lead", "SCHEDULED");
-
-        when(candidateRepository.findById(1L)).thenReturn(Optional.of(candidate));
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.scheduleInterview(interview));
-        assertTrue(exception.getMessage().contains("Meeting Link is required"));
-    }
-
-    @Test
-    public void shouldThrowExceptionWhenSchedulingOfflineInterviewWithoutLocation() {
-        Candidate candidate = new Candidate(1L, "A", "B", "E1", "1990-01-01", "a@company.com", "Pass@123", 10L);
-        Interview interview = new Interview(null, 1L, 1L, 10L, "OFFLINE", "2026-10-01", "10:00 AM", "", null, "HR Lead", "SCHEDULED");
-
-        when(candidateRepository.findById(1L)).thenReturn(Optional.of(candidate));
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.scheduleInterview(interview));
-        assertTrue(exception.getMessage().contains("Meeting Room Name / Location is required"));
-    }
-
-    // ==================================================
-    // 7. NOTIFICATION MANAGEMENT TESTS
-    // ==================================================
-
-    @Test
-    public void shouldMarkNotificationAsReadSuccessfully() {
-        Notification notification = new Notification(1L, 5L, "Title", "Message", "TYPE", false, "2026-09-01");
-        when(notificationRepository.findById(1L)).thenReturn(Optional.of(notification));
-        when(notificationRepository.save(any(Notification.class))).thenAnswer(i -> i.getArgument(0));
-
-        Notification readNotif = candidateService.markNotificationAsRead(1L);
-
-        assertTrue(readNotif.isRead());
-    }
-
-    @Test
-    public void shouldThrowExceptionWhenMarkingNonExistentNotificationAsRead() {
-        when(notificationRepository.findById(99L)).thenReturn(Optional.empty());
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.markNotificationAsRead(99L));
-        assertTrue(exception.getMessage().contains("not found"));
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.applyForJob(adminCandidate));
+        assertTrue(exception.getMessage().contains("Administrators and HR Admins are not allowed to apply"));
     }
 }

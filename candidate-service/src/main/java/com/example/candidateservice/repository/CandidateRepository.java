@@ -16,6 +16,10 @@ public interface CandidateRepository extends JpaRepository<Candidate, Long> {
 
     List<Candidate> findByEmployeeId(String employeeId);
 
+    List<Candidate> findByEmployeeIdIgnoreCase(String employeeId);
+
+    Optional<Candidate> findByEmployeeIdIgnoreCaseAndEmailIgnoreCase(String employeeId, String email);
+
     Optional<Candidate> findByEmailAndJobId(String email, Long jobId);
 
     Optional<Candidate> findByEmailIgnoreCaseAndJobId(String email, Long jobId);

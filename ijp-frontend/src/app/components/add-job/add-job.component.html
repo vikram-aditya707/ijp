@@ -10,56 +10,178 @@
         <i class="fa-solid fa-circle-exclamation me-1"></i> {{ errorMessage }}
       </div>
 
-      <form (ngSubmit)="onSubmit()" #jobForm="ngForm" autocomplete="off">
+      <form (ngSubmit)="onSubmit()" #jobForm="ngForm" autocomplete="off" novalidate>
+        <div class="row">
+          
+          <!-- Read-only System Generated Job Code -->
+          <div class="col-md-6 mb-3">
+            <label for="jobId" class="form-label fw-semibold small">Job Code <span class="badge bg-secondary ms-1">Auto-Generated</span></label>
+            <div class="input-group">
+              <span class="input-group-text bg-light text-muted"><i class="fa-solid fa-lock"></i></span>
+              <input 
+                type="text" 
+                class="form-control bg-light fw-bold text-primary" 
+                id="jobId" 
+                name="jobId" 
+                [ngModel]="job.jobId" 
+                readonly 
+                disabled />
+            </div>
+            <div class="form-text extra-small text-muted">System generated Job Code (read-only).</div>
+          </div>
+
+          <!-- Designation / Role Typeahead -->
+          <div class="col-md-6 mb-3 position-relative">
+            <label for="designationInput" class="form-label fw-semibold small">Designation / Role <span class="text-danger">*</span></label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [class.is-invalid]="(desigModel.dirty || desigModel.touched) && !isDesignationValid()"
+              id="designationInput" 
+              name="designation" 
+              [(ngModel)]="job.designation" 
+              #desigModel="ngModel"
+              (input)="onDesignationInput()"
+              (keydown)="onDesignationKeyDown($event)"
+              (blur)="onDesignationBlur()"
+              required 
+              placeholder="Select or type Designation" 
+              autocomplete="off" />
+            
+            <!-- Typeahead Dropdown Suggestions -->
+            <ul *ngIf="showDesignationDropdown && filteredDesignations.length > 0" class="list-group position-absolute w-100 shadow-sm typeahead-suggestions" style="z-index: 1050; top: 100%;">
+              <li 
+                *ngFor="let desig of filteredDesignations; let i = index"
+                (mousedown)="selectDesignation(desig)"
+                class="list-group-item list-group-item-action py-2 px-3 small cursor-pointer"
+                [class.active]="i === selectedDesignationIndex">
+                <i class="fa-solid fa-briefcase me-2 text-muted"></i>{{ desig }}
+              </li>
+            </ul>
+
+            <div *ngIf="(desigModel.dirty || desigModel.touched) && !isDesignationValid()" class="text-danger extra-small mt-1">
+              Designation / Role is required.
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Job Description -->
+        <div class="mb-3">
+          <label for="description" class="form-label fw-semibold small">Job Description <span class="text-danger">*</span></label>
+          <textarea 
+            class="form-control" 
+            [class.is-invalid]="(descModel.dirty || descModel.touched) && !isDescriptionValid()"
+            id="description" 
+            name="description" 
+            rows="3" 
+            [(ngModel)]="job.description" 
+            #descModel="ngModel"
+            required 
+            placeholder="Enter job description and key responsibilities"></textarea>
+          <div *ngIf="(descModel.dirty || descModel.touched) && !isDescriptionValid()" class="text-danger extra-small mt-1">
+            Job description is required.
+          </div>
+        </div>
+
+        <!-- Location & Experience -->
         <div class="row">
           <div class="col-md-6 mb-3">
-            <label for="jobId" class="form-label fw-semibold small">Job Code</label>
-            <input type="text" class="form-control" id="jobId" name="jobId" [(ngModel)]="job.jobId" required placeholder="Enter Job Code (e.g. JOB101)" autocomplete="off" />
+            <label for="location" class="form-label fw-semibold small">Location <span class="text-danger">*</span></label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [class.is-invalid]="(locModel.dirty || locModel.touched) && !isLocationValid()"
+              id="location" 
+              name="location" 
+              [(ngModel)]="job.location" 
+              #locModel="ngModel"
+              required 
+              placeholder="e.g. Pune, Bangalore, Remote" 
+              autocomplete="off" />
+            <div *ngIf="(locModel.dirty || locModel.touched) && !isLocationValid()" class="text-danger extra-small mt-1">
+              Location is required.
+            </div>
           </div>
+
           <div class="col-md-6 mb-3">
-            <label for="designation" class="form-label fw-semibold small">Designation / Role</label>
-            <select class="form-select" id="designation" name="designation" [(ngModel)]="job.designation" required>
-              <option value="" disabled selected>Select Designation</option>
-              <option *ngFor="let desig of activeDesignations" [value]="desig.name">{{ desig.name }}</option>
-            </select>
+            <label for="experience" class="form-label fw-semibold small">Required Experience <span class="text-danger">*</span></label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [class.is-invalid]="(expModel.dirty || expModel.touched) && !isExperienceValid()"
+              id="experience" 
+              name="experience" 
+              [(ngModel)]="job.experience" 
+              #expModel="ngModel"
+              required 
+              placeholder="e.g. 2-5 Years" 
+              autocomplete="off" />
+            <div *ngIf="(expModel.dirty || expModel.touched) && !isExperienceValid()" class="text-danger extra-small mt-1">
+              Required experience is required.
+            </div>
           </div>
         </div>
 
+        <!-- Skill Set -->
         <div class="mb-3">
-          <label for="description" class="form-label fw-semibold small">Job Description</label>
-          <textarea class="form-control" id="description" name="description" rows="3" [(ngModel)]="job.description" required placeholder="Enter job description and key responsibilities"></textarea>
-        </div>
-
-        <div class="row">
-          <div class="col-md-6 mb-3">
-            <label for="location" class="form-label fw-semibold small">Location</label>
-            <input type="text" class="form-control" id="location" name="location" [(ngModel)]="job.location" required placeholder="Enter Location" autocomplete="off" />
+          <label for="skillSet" class="form-label fw-semibold small">Required Skill Set <span class="text-danger">*</span></label>
+          <input 
+            type="text" 
+            class="form-control" 
+            [class.is-invalid]="(skillsModel.dirty || skillsModel.touched) && !isSkillSetValid()"
+            id="skillSet" 
+            name="skillSet" 
+            [(ngModel)]="job.skillSet" 
+            #skillsModel="ngModel"
+            required 
+            placeholder="e.g. Java, Spring Boot, Angular, MySQL" 
+            autocomplete="off" />
+          <div *ngIf="(skillsModel.dirty || skillsModel.touched) && !isSkillSetValid()" class="text-danger extra-small mt-1">
+            Required skill set is required.
           </div>
-          <div class="col-md-6 mb-3">
-            <label for="experience" class="form-label fw-semibold small">Required Experience</label>
-            <input type="text" class="form-control" id="experience" name="experience" [(ngModel)]="job.experience" required placeholder="Enter Required Experience" autocomplete="off" />
-          </div>
         </div>
 
-        <div class="mb-3">
-          <label for="skillSet" class="form-label fw-semibold small">Required Skill Set</label>
-          <input type="text" class="form-control" id="skillSet" name="skillSet" [(ngModel)]="job.skillSet" required placeholder="Enter Required Skills (e.g. Java, Angular, MySQL)" autocomplete="off" />
-        </div>
-
+        <!-- Minimum & Maximum Salary -->
         <div class="row">
           <div class="col-md-6 mb-4">
-            <label for="salaryMin" class="form-label fw-semibold small">Minimum Salary (₹)</label>
-            <input type="number" class="form-control" id="salaryMin" name="salaryMin" [(ngModel)]="job.salaryMin" required placeholder="Enter Minimum Salary" />
+            <label for="salaryMin" class="form-label fw-semibold small">Minimum Salary (₹) <span class="text-danger">*</span></label>
+            <input 
+              type="number" 
+              class="form-control" 
+              [class.is-invalid]="(salMinModel.dirty || salMinModel.touched) && !isSalaryMinValid()"
+              id="salaryMin" 
+              name="salaryMin" 
+              [(ngModel)]="job.salaryMin" 
+              #salMinModel="ngModel"
+              required 
+              placeholder="e.g. 500000" />
+            <div *ngIf="(salMinModel.dirty || salMinModel.touched) && !isSalaryMinValid()" class="text-danger extra-small mt-1">
+              Minimum salary is required.
+            </div>
           </div>
+
           <div class="col-md-6 mb-4">
-            <label for="salaryMax" class="form-label fw-semibold small">Maximum Salary (₹)</label>
-            <input type="number" class="form-control" id="salaryMax" name="salaryMax" [(ngModel)]="job.salaryMax" required placeholder="Enter Maximum Salary" />
+            <label for="salaryMax" class="form-label fw-semibold small">Maximum Salary (₹) <span class="text-danger">*</span></label>
+            <input 
+              type="number" 
+              class="form-control" 
+              [class.is-invalid]="(salMaxModel.dirty || salMaxModel.touched) && !isSalaryMaxValid()"
+              id="salaryMax" 
+              name="salaryMax" 
+              [(ngModel)]="job.salaryMax" 
+              #salMaxModel="ngModel"
+              required 
+              placeholder="e.g. 1200000" />
+            <div *ngIf="(salMaxModel.dirty || salMaxModel.touched) && !isSalaryMaxValid()" class="text-danger extra-small mt-1">
+              Maximum salary is required.
+            </div>
           </div>
         </div>
 
         <div class="d-flex justify-content-between align-items-center">
           <a routerLink="/admin-dashboard" class="btn btn-outline-secondary px-4"><i class="fa-solid fa-arrow-left me-1"></i> Cancel</a>
-          <button type="submit" [disabled]="!jobForm.form.valid || isSubmitting" class="btn btn-admin-primary px-5 fw-semibold py-2">
+          <button type="submit" [disabled]="!isFormValid() || isSubmitting" class="btn btn-admin-primary px-5 fw-semibold py-2">
             <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>
             Publish Job Posting
           </button>

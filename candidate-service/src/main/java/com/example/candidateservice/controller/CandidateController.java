@@ -62,7 +62,8 @@ public class CandidateController {
         } catch (RuntimeException e) {
             Map<String, String> error = new HashMap<>();
             error.put("message", e.getMessage());
-            return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+            HttpStatus status = (e.getMessage() != null && e.getMessage().toLowerCase().contains("already exists")) ? HttpStatus.CONFLICT : HttpStatus.BAD_REQUEST;
+            return new ResponseEntity<>(error, status);
         }
     }
 

@@ -23,39 +23,136 @@
         <span class="fw-semibold text-dark">{{ selectedJobTitle }}</span>
       </div>
 
-      <form (ngSubmit)="onSubmit()" #applyForm="ngForm" autocomplete="off">
+      <form (ngSubmit)="onSubmit()" #applyForm="ngForm" autocomplete="off" novalidate>
+        
+        <!-- Job ID (Pre-filled & Read-Only) -->
         <div class="mb-3">
-          <label for="jobId" class="form-label fw-semibold small">Job ID</label>
-          <input type="number" class="form-control" id="jobId" name="jobId" [(ngModel)]="candidate.jobId" required placeholder="Enter Job ID" />
+          <label for="jobId" class="form-label fw-semibold small">Job ID <span class="badge bg-secondary ms-1">Read-Only</span></label>
+          <div class="input-group">
+            <span class="input-group-text bg-light text-muted"><i class="fa-solid fa-lock"></i></span>
+            <input 
+              type="number" 
+              class="form-control bg-light fw-bold text-primary" 
+              id="jobId" 
+              name="jobId" 
+              [ngModel]="candidate.jobId" 
+              readonly 
+              disabled />
+          </div>
+          <div class="form-text extra-small text-muted">Job ID is pre-filled automatically based on your selected job.</div>
         </div>
 
+        <!-- First Name & Last Name -->
         <div class="row">
           <div class="col-md-6 mb-3">
-            <label for="firstName" class="form-label fw-semibold small">First Name</label>
-            <input type="text" class="form-control" id="firstName" name="firstName" [(ngModel)]="candidate.firstName" required placeholder="Enter First Name" autocomplete="off" />
+            <label for="firstName" class="form-label fw-semibold small">First Name <span class="text-danger">*</span></label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [class.is-invalid]="(fnModel.dirty || fnModel.touched) && !isFirstNameValid()"
+              id="firstName" 
+              name="firstName" 
+              [(ngModel)]="candidate.firstName" 
+              #fnModel="ngModel"
+              required 
+              placeholder="First Name" 
+              autocomplete="off" />
+            <div *ngIf="(fnModel.dirty || fnModel.touched) && !(candidate.firstName || '').trim()" class="text-danger extra-small mt-1">
+              First name is required.
+            </div>
+            <div *ngIf="(fnModel.dirty || fnModel.touched) && (candidate.firstName || '').trim() && hasFirstNameDigits()" class="text-danger extra-small mt-1">
+              First name cannot contain numbers.
+            </div>
           </div>
+
           <div class="col-md-6 mb-3">
-            <label for="lastName" class="form-label fw-semibold small">Last Name</label>
-            <input type="text" class="form-control" id="lastName" name="lastName" [(ngModel)]="candidate.lastName" required placeholder="Enter Last Name" autocomplete="off" />
+            <label for="lastName" class="form-label fw-semibold small">Last Name <span class="text-muted fw-normal">(Optional)</span></label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [class.is-invalid]="(lnModel.dirty || lnModel.touched) && !isLastNameValid()"
+              id="lastName" 
+              name="lastName" 
+              [(ngModel)]="candidate.lastName" 
+              #lnModel="ngModel"
+              placeholder="Last Name" 
+              autocomplete="off" />
+            <div *ngIf="(lnModel.dirty || lnModel.touched) && !isLastNameValid()" class="text-danger extra-small mt-1">
+              Last name cannot contain numbers.
+            </div>
           </div>
         </div>
 
+        <!-- Employee ID & Date of Birth -->
         <div class="row">
           <div class="col-md-6 mb-3">
-            <label for="employeeId" class="form-label fw-semibold small">Employee ID</label>
-            <input type="text" class="form-control" id="employeeId" name="employeeId" [(ngModel)]="candidate.employeeId" required placeholder="Enter Employee ID" autocomplete="off" />
+            <label for="employeeId" class="form-label fw-semibold small">Employee ID <span class="text-danger">*</span></label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [class.is-invalid]="(empModel.dirty || empModel.touched) && !isEmployeeIdValid()"
+              id="employeeId" 
+              name="employeeId" 
+              [(ngModel)]="candidate.employeeId" 
+              #empModel="ngModel"
+              required 
+              placeholder="e.g. EMP101" 
+              autocomplete="off" />
+            <div *ngIf="(empModel.dirty || empModel.touched) && !isEmployeeIdValid()" class="text-danger extra-small mt-1">
+              Employee ID is required.
+            </div>
           </div>
+
           <div class="col-md-6 mb-3">
-            <label for="dob" class="form-label fw-semibold small">Date of Birth</label>
-            <input type="date" class="form-control" id="dob" name="dob" [(ngModel)]="candidate.dob" required />
+            <label for="dob" class="form-label fw-semibold small">Date of Birth <span class="text-danger">*</span></label>
+            <input 
+              type="date" 
+              class="form-control" 
+              [class.is-invalid]="(dobModel.dirty || dobModel.touched) && !isAgeValid()"
+              id="dob" 
+              name="dob" 
+              [min]="minDobDate"
+              [max]="maxDobDate"
+              [(ngModel)]="candidate.dob" 
+              #dobModel="ngModel"
+              required />
+            <div *ngIf="(dobModel.dirty || dobModel.touched) && !isAgeValid()" class="text-danger extra-small mt-1">
+              Age must be between 18 and 80 years.
+            </div>
           </div>
         </div>
 
-        <div class="mb-3">
+        <!-- Company Email with Typeahead Suggestions -->
+        <div class="mb-3 position-relative">
           <label for="email" class="form-label fw-semibold small">Company Email <span class="text-danger">*</span></label>
-          <input type="email" class="form-control" id="email" name="email" [(ngModel)]="candidate.email" #emailModel="ngModel" pattern="^[^@\s]+@company\.com$" required placeholder="naman@company.com" autocomplete="off" />
+          <input 
+            type="email" 
+            class="form-control" 
+            [class.is-invalid]="(emailModel.dirty || emailModel.touched) && !isEmailValid()"
+            id="email" 
+            name="email" 
+            [(ngModel)]="candidate.email" 
+            #emailModel="ngModel" 
+            (input)="onEmailInput()"
+            (keydown)="onEmailKeyDown($event)"
+            (blur)="onEmailBlur()"
+            required 
+            placeholder="username@company.com" 
+            autocomplete="off" />
+          
+          <!-- Email Overlay Suggestions -->
+          <ul *ngIf="showEmailDropdown && filteredEmailSuggestions.length > 0" class="list-group position-absolute w-100 shadow-sm typeahead-suggestions" style="z-index: 1050; top: 100%;">
+            <li 
+              *ngFor="let em of filteredEmailSuggestions; let i = index"
+              (mousedown)="selectEmail(em)"
+              class="list-group-item list-group-item-action py-2 px-3 small cursor-pointer"
+              [class.active]="i === selectedEmailIndex">
+              <i class="fa-solid fa-envelope me-2 text-muted"></i>{{ em }}
+            </li>
+          </ul>
+
           <div class="form-text extra-small text-muted">Please use your company email ending with &#64;company.com.</div>
-          <div *ngIf="emailModel.invalid && (emailModel.dirty || emailModel.touched)" class="text-danger extra-small mt-1">
+          <div *ngIf="(emailModel.dirty || emailModel.touched) && !isEmailValid()" class="text-danger extra-small mt-1">
             Please use your company email ending with &#64;company.com.
           </div>
         </div>
@@ -63,13 +160,20 @@
         <!-- Password Field ONLY shown for unauthenticated users -->
         <div class="mb-4" *ngIf="!authService.isEmployee()">
           <label for="password" class="form-label fw-semibold small">Account Password <span class="text-danger">*</span></label>
-          <input type="password" class="form-control" id="password" name="password" [(ngModel)]="candidate.password" placeholder="Enter employee account password" autocomplete="new-password" />
+          <input 
+            type="password" 
+            class="form-control" 
+            id="password" 
+            name="password" 
+            [(ngModel)]="candidate.password" 
+            placeholder="Enter employee account password" 
+            autocomplete="new-password" />
           <div class="form-text extra-small text-muted">Password used for employee login authentication.</div>
         </div>
 
         <div class="d-flex justify-content-between align-items-center">
           <a routerLink="/" class="btn btn-outline-secondary px-4"><i class="fa-solid fa-arrow-left me-1"></i> Back to Jobs</a>
-          <button type="submit" [disabled]="!applyForm.form.valid || isSubmitting" class="btn btn-primary px-5 fw-semibold py-2">
+          <button type="submit" [disabled]="!isFormValid() || isSubmitting" class="btn btn-primary px-5 fw-semibold py-2">
             <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status"></span>
             Submit Application
           </button>

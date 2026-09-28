@@ -28,6 +28,12 @@ export class ApplyComponent implements OnInit {
   selectedJobCode = '';
   selectedJobTitle = '';
 
+  // Email Typeahead Suggestions for authenticated employee
+  emailSuggestions: string[] = [];
+  filteredEmailSuggestions: string[] = [];
+  showEmailDropdown = false;
+  selectedEmailIndex = -1;
+
   isSubmitting = false;
   successMessage = '';
   errorMessage = '';
@@ -46,7 +52,6 @@ export class ApplyComponent implements OnInit {
       return;
     }
 
-    // If an employee is logged in, auto-fill their session details
     const currentUser = this.authService.currentUserValue;
     if (currentUser && currentUser.role !== 'ADMIN') {
       const nameParts = currentUser.name.split(' ');
@@ -54,6 +59,9 @@ export class ApplyComponent implements OnInit {
       this.candidate.lastName = nameParts.slice(1).join(' ') || '';
       this.candidate.email = currentUser.email || '';
       this.candidate.employeeId = currentUser.employeeId || '';
+      if (currentUser.email) {
+        this.emailSuggestions = [currentUser.email];
+      }
     }
 
     this.route.queryParams.subscribe(params => {
@@ -69,30 +77,142 @@ export class ApplyComponent implements OnInit {
     });
   }
 
+  get minDobDate(): string {
+    const today = new Date();
+    const minDate = new Date(today.getFullYear() - 80, today.getMonth(), today.getDate());
+    return minDate.toISOString().split('T')[0];
+  }
+
+  get maxDobDate(): string {
+    const today = new Date();
+    const maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+    return maxDate.toISOString().split('T')[0];
+  }
+
+  // Email Typeahead Handlers
+  onEmailInput(): void {
+    this.selectedEmailIndex = -1;
+    const val = (this.candidate.email || '').trim().toLowerCase();
+    if (!val || this.emailSuggestions.length === 0) {
+      this.filteredEmailSuggestions = [];
+      this.showEmailDropdown = false;
+      return;
+    }
+
+    this.filteredEmailSuggestions = this.emailSuggestions.filter(e => e.toLowerCase().includes(val));
+    this.showEmailDropdown = this.filteredEmailSuggestions.length > 0;
+  }
+
+  selectEmail(email: string): void {
+    this.candidate.email = email;
+    this.showEmailDropdown = false;
+    this.filteredEmailSuggestions = [];
+    this.selectedEmailIndex = -1;
+  }
+
+  onEmailKeyDown(event: KeyboardEvent): void {
+    if (!this.showEmailDropdown || this.filteredEmailSuggestions.length === 0) return;
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      this.selectedEmailIndex = (this.selectedEmailIndex + 1) % this.filteredEmailSuggestions.length;
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      this.selectedEmailIndex = (this.selectedEmailIndex - 1 + this.filteredEmailSuggestions.length) % this.filteredEmailSuggestions.length;
+    } else if (event.key === 'Enter') {
+      if (this.selectedEmailIndex >= 0 && this.selectedEmailIndex < this.filteredEmailSuggestions.length) {
+        event.preventDefault();
+        this.selectEmail(this.filteredEmailSuggestions[this.selectedEmailIndex]);
+      }
+    } else if (event.key === 'Escape') {
+      this.showEmailDropdown = false;
+      this.selectedEmailIndex = -1;
+    }
+  }
+
+  onEmailBlur(): void {
+    setTimeout(() => {
+      this.showEmailDropdown = false;
+    }, 200);
+  }
+
+  // Validation Helpers
+  hasFirstNameDigits(): boolean {
+    return /\d/.test(this.candidate.firstName || '');
+  }
+
+  isFirstNameValid(): boolean {
+    const fn = (this.candidate.firstName || '').trim();
+    if (!fn) return false;
+    return !this.hasFirstNameDigits();
+  }
+
+  hasLastNameDigits(): boolean {
+    return /\d/.test(this.candidate.lastName || '');
+  }
+
+  isLastNameValid(): boolean {
+    const ln = (this.candidate.lastName || '').trim();
+    if (!ln) return true; // Optional!
+    return !this.hasLastNameDigits();
+  }
+
+  isEmployeeIdValid(): boolean {
+    return !!(this.candidate.employeeId || '').trim();
+  }
+
+  isAgeValid(): boolean {
+    if (!this.candidate.dob) return false;
+    const dobDate = new Date(this.candidate.dob);
+    const today = new Date();
+    if (isNaN(dobDate.getTime()) || dobDate > today) return false;
+    let age = today.getFullYear() - dobDate.getFullYear();
+    const m = today.getMonth() - dobDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate())) {
+      age--;
+    }
+    return age >= 18 && age <= 80;
+  }
+
+  isEmailValid(): boolean {
+    const em = (this.candidate.email || '').trim().toLowerCase();
+    if (!em) return false;
+    return /^[^@\s]+@company\.com$/.test(em);
+  }
+
+  isJobIdValid(): boolean {
+    return this.candidate.jobId !== null && this.candidate.jobId !== undefined && this.candidate.jobId > 0;
+  }
+
+  isFormValid(): boolean {
+    return this.isJobIdValid() &&
+           this.isFirstNameValid() &&
+           this.isLastNameValid() &&
+           this.isEmployeeIdValid() &&
+           this.isAgeValid() &&
+           this.isEmailValid();
+  }
+
   onSubmit(): void {
+    this.errorMessage = '';
+    this.successMessage = '';
+
     if (this.authService.isAdmin()) {
       this.errorMessage = 'Administrators and HR Admins are not allowed to apply for job postings.';
       return;
     }
-    if (/\d/.test(this.candidate.firstName) || /\d/.test(this.candidate.lastName)) {
-      this.errorMessage = 'First Name and Last Name must contain letters only (no numbers allowed).';
-      return;
-    }
 
-    if (!this.candidate.email || !this.candidate.email.trim().toLowerCase().endsWith('@company.com')) {
-      this.errorMessage = 'Only company email addresses ending with @company.com are allowed.';
+    if (!this.isFormValid()) {
+      this.errorMessage = 'Please fix all validation errors before submitting application.';
       return;
     }
 
     this.isSubmitting = true;
-    this.successMessage = '';
-    this.errorMessage = '';
 
     this.candidateService.applyForJob(this.candidate).subscribe({
       next: (response) => {
         this.isSubmitting = false;
-        this.successMessage = `Application submitted successfully for candidate ${response.firstName} ${response.lastName}!`;
-        // Reset form to logged in state
+        this.successMessage = `Application submitted successfully for candidate ${response.firstName} ${response.lastName || ''}!`;
         const currentUser = this.authService.currentUserValue;
         this.candidate = {
           firstName: currentUser?.role === 'EMPLOYEE' ? this.candidate.firstName : '',
@@ -106,11 +226,7 @@ export class ApplyComponent implements OnInit {
       },
       error: (err) => {
         this.isSubmitting = false;
-        if (err.error && err.error.message) {
-          this.errorMessage = err.error.message;
-        } else {
-          this.errorMessage = 'Failed to submit application. Please verify details and try again.';
-        }
+        this.errorMessage = err.error?.message || 'Failed to submit application. Please verify details and try again.';
         console.error('Application error:', err);
       }
     });

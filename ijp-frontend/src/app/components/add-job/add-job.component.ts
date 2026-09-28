@@ -17,9 +17,8 @@ import { Designation } from '../../models/designation.model';
 })
 export class AddJobComponent implements OnInit {
 
-  // Form fields initially COMPLETELY EMPTY
   job: JobPosting = {
-    jobId: '',
+    jobId: 'JOB101',
     description: '',
     designation: '',
     location: '',
@@ -31,6 +30,10 @@ export class AddJobComponent implements OnInit {
   };
 
   activeDesignations: Designation[] = [];
+  filteredDesignations: string[] = [];
+  showDesignationDropdown = false;
+  selectedDesignationIndex = -1;
+
   isSubmitting = false;
   errorMessage = '';
 
@@ -46,7 +49,19 @@ export class AddJobComponent implements OnInit {
       this.router.navigate(['/login']);
       return;
     }
+    this.loadNextJobCode();
     this.loadActiveDesignations();
+  }
+
+  loadNextJobCode(): void {
+    this.jobService.getNextJobCode().subscribe({
+      next: (res) => {
+        if (res && res.jobCode) {
+          this.job.jobId = res.jobCode;
+        }
+      },
+      error: (err) => console.error('Failed to load next job code:', err)
+    });
   }
 
   loadActiveDesignations(): void {
@@ -58,14 +73,104 @@ export class AddJobComponent implements OnInit {
     });
   }
 
+  // Typeahead for Designation
+  onDesignationInput(): void {
+    this.selectedDesignationIndex = -1;
+    const val = (this.job.designation || '').trim().toLowerCase();
+    if (!val) {
+      this.filteredDesignations = [];
+      this.showDesignationDropdown = false;
+      return;
+    }
+
+    const allNames = this.activeDesignations.map(d => d.name);
+    const prefixMatches = allNames.filter(n => n.toLowerCase().startsWith(val));
+    const otherMatches = allNames.filter(n => !n.toLowerCase().startsWith(val) && n.toLowerCase().includes(val));
+    this.filteredDesignations = [...prefixMatches, ...otherMatches];
+    this.showDesignationDropdown = this.filteredDesignations.length > 0;
+  }
+
+  selectDesignation(name: string): void {
+    this.job.designation = name;
+    this.showDesignationDropdown = false;
+    this.filteredDesignations = [];
+    this.selectedDesignationIndex = -1;
+  }
+
+  onDesignationKeyDown(event: KeyboardEvent): void {
+    if (!this.showDesignationDropdown || this.filteredDesignations.length === 0) return;
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      this.selectedDesignationIndex = (this.selectedDesignationIndex + 1) % this.filteredDesignations.length;
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      this.selectedDesignationIndex = (this.selectedDesignationIndex - 1 + this.filteredDesignations.length) % this.filteredDesignations.length;
+    } else if (event.key === 'Enter') {
+      if (this.selectedDesignationIndex >= 0 && this.selectedDesignationIndex < this.filteredDesignations.length) {
+        event.preventDefault();
+        this.selectDesignation(this.filteredDesignations[this.selectedDesignationIndex]);
+      }
+    } else if (event.key === 'Escape') {
+      this.showDesignationDropdown = false;
+      this.selectedDesignationIndex = -1;
+    }
+  }
+
+  onDesignationBlur(): void {
+    setTimeout(() => {
+      this.showDesignationDropdown = false;
+    }, 200);
+  }
+
+  // Validation Checks
+  isDesignationValid(): boolean {
+    return !!(this.job.designation || '').trim();
+  }
+
+  isDescriptionValid(): boolean {
+    return !!(this.job.description || '').trim();
+  }
+
+  isLocationValid(): boolean {
+    return !!(this.job.location || '').trim();
+  }
+
+  isExperienceValid(): boolean {
+    return !!(this.job.experience || '').trim();
+  }
+
+  isSkillSetValid(): boolean {
+    return !!(this.job.skillSet || '').trim();
+  }
+
+  isSalaryMinValid(): boolean {
+    return this.job.salaryMin !== null && this.job.salaryMin !== undefined && this.job.salaryMin > 0;
+  }
+
+  isSalaryMaxValid(): boolean {
+    return this.job.salaryMax !== null && this.job.salaryMax !== undefined && this.job.salaryMax > 0 && this.job.salaryMax >= (this.job.salaryMin || 0);
+  }
+
+  isFormValid(): boolean {
+    return this.isDesignationValid() &&
+           this.isDescriptionValid() &&
+           this.isLocationValid() &&
+           this.isExperienceValid() &&
+           this.isSkillSetValid() &&
+           this.isSalaryMinValid() &&
+           this.isSalaryMaxValid();
+  }
+
   onSubmit(): void {
-    if (!this.job.designation) {
-      this.errorMessage = 'Please select a Designation / Role.';
+    this.errorMessage = '';
+
+    if (!this.isFormValid()) {
+      this.errorMessage = 'Please complete all required fields before publishing.';
       return;
     }
 
     this.isSubmitting = true;
-    this.errorMessage = '';
 
     this.jobService.createJob(this.job).subscribe({
       next: (created) => {
@@ -74,7 +179,7 @@ export class AddJobComponent implements OnInit {
       },
       error: (err) => {
         this.isSubmitting = false;
-        this.errorMessage = 'Failed to create job posting. Please try again.';
+        this.errorMessage = err.error?.message || 'Failed to create job posting. Please try again.';
         console.error(err);
       }
     });

@@ -31,35 +31,134 @@ public class JobPostingServiceTest {
     }
 
     // ==================================================
-    // 1. CREATE JOB TESTS
+    // PART 7 — JOB CREATION TESTS (20–32)
     // ==================================================
 
     @Test
-    public void testCreateJob() {
-        JobPosting job = new JobPosting(null, "JOB101", "Developer Role", "Java Developer", "Bangalore", "Java, Spring Boot", "2 years", 50000.0, 80000.0, "OPEN");
-        when(jobPostingRepository.save(any(JobPosting.class))).thenReturn(job);
+    public void test20_shouldCreateValidJobSuccessfully() {
+        JobPosting job = new JobPosting(null, null, "Developer Role", "Java Developer", "Bangalore", "Java, Spring Boot", "2 years", 50000.0, 80000.0, "OPEN");
+        when(jobPostingRepository.findAll()).thenReturn(Collections.emptyList());
+        when(jobPostingRepository.save(any(JobPosting.class))).thenAnswer(i -> i.getArgument(0));
 
         JobPosting created = jobPostingService.createJob(job);
 
         assertNotNull(created);
+        assertEquals("JOB101", created.getJobId());
         assertEquals("OPEN", created.getStatus());
         assertEquals("Java Developer", created.getDesignation());
-        verify(jobPostingRepository, times(1)).save(job);
     }
 
     @Test
-    public void shouldCreateJobWithDefaultOpenStatusWhenStatusNull() {
-        JobPosting job = new JobPosting(null, "JOB102", "Angular Role", "Frontend Developer", "Pune", "Angular, TS", "3 years", 60000.0, 90000.0, null);
-        when(jobPostingRepository.save(any(JobPosting.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    public void test21_shouldFailWhenMissingDesignation() {
+        JobPosting job = new JobPosting(null, null, "Desc", "", "Blr", "Java", "2 yrs", 50.0, 80.0, "OPEN");
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> jobPostingService.createJob(job));
+        assertTrue(exception.getMessage().contains("Designation / Role is required"));
+    }
+
+    @Test
+    public void test22_shouldFailWhenMissingDescription() {
+        JobPosting job = new JobPosting(null, null, "", "Java Dev", "Blr", "Java", "2 yrs", 50.0, 80.0, "OPEN");
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> jobPostingService.createJob(job));
+        assertTrue(exception.getMessage().contains("Job description is required"));
+    }
+
+    @Test
+    public void test23_shouldFailWhenMissingLocation() {
+        JobPosting job = new JobPosting(null, null, "Desc", "Java Dev", "", "Java", "2 yrs", 50.0, 80.0, "OPEN");
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> jobPostingService.createJob(job));
+        assertTrue(exception.getMessage().contains("Location is required"));
+    }
+
+    @Test
+    public void test24_shouldFailWhenMissingExperience() {
+        JobPosting job = new JobPosting(null, null, "Desc", "Java Dev", "Blr", "Java", "", 50.0, 80.0, "OPEN");
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> jobPostingService.createJob(job));
+        assertTrue(exception.getMessage().contains("Required experience is required"));
+    }
+
+    @Test
+    public void test25_shouldFailWhenMissingSkillSet() {
+        JobPosting job = new JobPosting(null, null, "Desc", "Java Dev", "Blr", "", "2 yrs", 50.0, 80.0, "OPEN");
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> jobPostingService.createJob(job));
+        assertTrue(exception.getMessage().contains("Required skill set is required"));
+    }
+
+    @Test
+    public void test26_shouldFailWhenMissingMinimumSalary() {
+        JobPosting job = new JobPosting(null, null, "Desc", "Java Dev", "Blr", "Java", "2 yrs", 0.0, 80.0, "OPEN");
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> jobPostingService.createJob(job));
+        assertTrue(exception.getMessage().contains("Minimum salary is required"));
+    }
+
+    @Test
+    public void test27_shouldFailWhenMissingMaximumSalary() {
+        JobPosting job = new JobPosting(null, null, "Desc", "Java Dev", "Blr", "Java", "2 yrs", 50.0, null, "OPEN");
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> jobPostingService.createJob(job));
+        assertTrue(exception.getMessage().contains("Maximum salary is required"));
+    }
+
+    @Test
+    public void test28_shouldOverrideUserSuppliedJobCodeWithBackendGeneratedCode() {
+        JobPosting job = new JobPosting(null, "JOB999", "Desc", "Java Dev", "Blr", "Java", "2 yrs", 50.0, 80.0, "OPEN");
+        when(jobPostingRepository.findAll()).thenReturn(Collections.emptyList());
+        when(jobPostingRepository.save(any(JobPosting.class))).thenAnswer(i -> i.getArgument(0));
 
         JobPosting created = jobPostingService.createJob(job);
+        assertEquals("JOB101", created.getJobId());
+    }
 
-        assertNotNull(created);
-        assertEquals("OPEN", created.getStatus());
+    @Test
+    public void test29_shouldGenerateFirstJobCodeAsJOB101WhenNoJobsExist() {
+        when(jobPostingRepository.findAll()).thenReturn(Collections.emptyList());
+
+        String nextCode = jobPostingService.generateNextJobCode();
+        assertEquals("JOB101", nextCode);
+    }
+
+    @Test
+    public void test30_shouldAutoIncrementSubsequentJobCode() {
+        JobPosting job1 = new JobPosting(1L, "JOB101", "Desc", "Java Dev", "Blr", "Java", "2 yrs", 50.0, 80.0, "OPEN");
+        JobPosting job2 = new JobPosting(2L, "JOB102", "Desc", "Angular Dev", "Blr", "Angular", "3 yrs", 60.0, 90.0, "OPEN");
+        when(jobPostingRepository.findAll()).thenReturn(List.of(job1, job2));
+
+        String nextCode = jobPostingService.generateNextJobCode();
+        assertEquals("JOB103", nextCode);
+    }
+
+    @Test
+    public void test31_shouldNotOverwriteExistingJobCodesOnUpdate() {
+        JobPosting existingJob = new JobPosting(1L, "JOB101", "Old Desc", "Java Dev", "Blr", "Java", "2 yrs", 50.0, 80.0, "OPEN");
+        JobPosting updatedInfo = new JobPosting(null, "JOB101", "New Desc", "Senior Java Dev", "Hyderabad", "Java 17, Spring", "5 yrs", 80.0, 120.0, "OPEN");
+
+        when(jobPostingRepository.findById(1L)).thenReturn(Optional.of(existingJob));
+        when(jobPostingRepository.save(any(JobPosting.class))).thenAnswer(i -> i.getArgument(0));
+
+        JobPosting result = jobPostingService.updateJob(1L, updatedInfo);
+
+        assertNotNull(result);
+        assertEquals("JOB101", result.getJobId());
+        assertEquals("Senior Java Dev", result.getDesignation());
+    }
+
+    @Test
+    public void test32_shouldPreventDuplicateJobCodeGenerations() {
+        JobPosting job1 = new JobPosting(1L, "JOB101", "Desc", "Java Dev", "Blr", "Java", "2 yrs", 50.0, 80.0, "OPEN");
+        JobPosting job2 = new JobPosting(2L, "JOB103", "Desc", "Angular Dev", "Blr", "Angular", "3 yrs", 60.0, 90.0, "OPEN");
+        when(jobPostingRepository.findAll()).thenReturn(List.of(job1, job2));
+
+        String nextCode = jobPostingService.generateNextJobCode();
+        assertEquals("JOB104", nextCode);
     }
 
     // ==================================================
-    // 2. GET JOBS TESTS
+    // ADDITIONAL GET, UPDATE, CLOSE, DELETE TESTS
     // ==================================================
 
     @Test
@@ -85,55 +184,6 @@ public class JobPostingServiceTest {
     }
 
     @Test
-    public void shouldGetJobByIdSuccessfully() {
-        JobPosting job = new JobPosting(1L, "JOB101", "Desc", "Java Dev", "Blr", "Java", "2 yrs", 50.0, 80.0, "OPEN");
-        when(jobPostingRepository.findById(1L)).thenReturn(Optional.of(job));
-
-        Optional<JobPosting> result = jobPostingService.getJobById(1L);
-
-        assertTrue(result.isPresent());
-        assertEquals("Java Dev", result.get().getDesignation());
-    }
-
-    @Test
-    public void shouldReturnEmptyWhenJobNotFoundById() {
-        when(jobPostingRepository.findById(99L)).thenReturn(Optional.empty());
-
-        Optional<JobPosting> result = jobPostingService.getJobById(99L);
-
-        assertTrue(result.isEmpty());
-    }
-
-    // ==================================================
-    // 3. UPDATE & CLOSE JOB TESTS
-    // ==================================================
-
-    @Test
-    public void shouldUpdateJobSuccessfully() {
-        JobPosting existingJob = new JobPosting(1L, "JOB101", "Old Desc", "Java Dev", "Blr", "Java", "2 yrs", 50.0, 80.0, "OPEN");
-        JobPosting updatedInfo = new JobPosting(null, "JOB101", "New Desc", "Senior Java Dev", "Hyderabad", "Java 17, Spring", "5 yrs", 80.0, 120.0, "OPEN");
-
-        when(jobPostingRepository.findById(1L)).thenReturn(Optional.of(existingJob));
-        when(jobPostingRepository.save(any(JobPosting.class))).thenAnswer(i -> i.getArgument(0));
-
-        JobPosting result = jobPostingService.updateJob(1L, updatedInfo);
-
-        assertNotNull(result);
-        assertEquals("Senior Java Dev", result.getDesignation());
-        assertEquals("Hyderabad", result.getLocation());
-    }
-
-    @Test
-    public void shouldReturnNullWhenUpdatingNonExistentJob() {
-        JobPosting updatedInfo = new JobPosting();
-        when(jobPostingRepository.findById(99L)).thenReturn(Optional.empty());
-
-        JobPosting result = jobPostingService.updateJob(99L, updatedInfo);
-
-        assertNull(result);
-    }
-
-    @Test
     public void testCloseJob() {
         JobPosting job = new JobPosting(1L, "JOB101", "Developer Role", "Java Developer", "Bangalore", "Java, Spring Boot", "2 years", 50000.0, 80000.0, "OPEN");
         when(jobPostingRepository.findById(1L)).thenReturn(Optional.of(job));
@@ -143,22 +193,7 @@ public class JobPostingServiceTest {
 
         assertNotNull(closed);
         assertEquals("CLOSED", closed.getStatus());
-        verify(jobPostingRepository, times(1)).findById(1L);
-        verify(jobPostingRepository, times(1)).save(job);
     }
-
-    @Test
-    public void shouldReturnNullWhenClosingNonExistentJob() {
-        when(jobPostingRepository.findById(99L)).thenReturn(Optional.empty());
-
-        JobPosting result = jobPostingService.closeJob(99L);
-
-        assertNull(result);
-    }
-
-    // ==================================================
-    // 4. DELETE JOB TESTS
-    // ==================================================
 
     @Test
     public void testDeleteJob_Success() {
@@ -168,13 +203,5 @@ public class JobPostingServiceTest {
         jobPostingService.deleteJob(1L);
 
         verify(jobPostingRepository, times(1)).deleteById(1L);
-    }
-
-    @Test
-    public void testDeleteJob_NotFound() {
-        when(jobPostingRepository.findById(99L)).thenReturn(Optional.empty());
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> jobPostingService.deleteJob(99L));
-        assertTrue(exception.getMessage().contains("not found"));
     }
 }

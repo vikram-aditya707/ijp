@@ -16,6 +16,10 @@ export class JobService {
     return this.http.get<JobPosting[]>(`${this.apiUrl}/open`);
   }
 
+  getNextJobCode(): Observable<{ jobCode: string }> {
+    return this.http.get<{ jobCode: string }>(`${this.apiUrl}/next-code`);
+  }
+
   getAllJobs(): Observable<JobPosting[]> {
     return this.http.get<JobPosting[]>(this.apiUrl);
   }

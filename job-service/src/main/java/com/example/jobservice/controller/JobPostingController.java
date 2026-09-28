@@ -19,10 +19,24 @@ public class JobPostingController {
     @Autowired
     private JobPostingService jobPostingService;
 
+    @GetMapping("/next-code")
+    public ResponseEntity<Map<String, String>> getNextJobCode() {
+        String nextCode = jobPostingService.generateNextJobCode();
+        Map<String, String> response = new HashMap<>();
+        response.put("jobCode", nextCode);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
     @PostMapping
-    public ResponseEntity<JobPosting> createJob(@RequestBody JobPosting jobPosting) {
-        JobPosting createdJob = jobPostingService.createJob(jobPosting);
-        return new ResponseEntity<>(createdJob, HttpStatus.CREATED);
+    public ResponseEntity<?> createJob(@RequestBody JobPosting jobPosting) {
+        try {
+            JobPosting createdJob = jobPostingService.createJob(jobPosting);
+            return new ResponseEntity<>(createdJob, HttpStatus.CREATED);
+        } catch (RuntimeException e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("message", e.getMessage());
+            return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+        }
     }
 
     @GetMapping

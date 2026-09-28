@@ -9,11 +9,16 @@ import com.example.candidateservice.repository.CandidateRepository;
 import com.example.candidateservice.repository.InterviewRepository;
 import com.example.candidateservice.repository.NotificationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Period;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -34,62 +39,139 @@ public class CandidateService {
     @Autowired
     private NotificationRepository notificationRepository;
 
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+    public static final List<String> VALID_JOB_ROLES = Arrays.asList(
+            "Software Engineer",
+            "Software Developer",
+            "Java Developer",
+            "Java Backend Developer",
+            "Java Full Stack Developer",
+            "Python Developer",
+            ".NET Developer",
+            "C# Developer",
+            "Angular Developer",
+            "React Developer",
+            "Frontend Developer",
+            "Backend Developer",
+            "Full Stack Developer",
+            "QA Engineer",
+            "Test Engineer",
+            "Automation Test Engineer",
+            "DevOps Engineer",
+            "Cloud Engineer",
+            "Data Analyst",
+            "Data Engineer",
+            "Data Scientist",
+            "Database Administrator",
+            "UI/UX Developer",
+            "Business Analyst",
+            "System Engineer",
+            "Network Engineer",
+            "Cyber Security Engineer",
+            "Machine Learning Engineer",
+            "AI Engineer",
+            "Technical Support Engineer",
+            "Project Engineer",
+            "Employee (General)",
+            "EMPLOYEE"
+    );
+
+    public void validatePasswordPolicy(String password) {
+        if (password == null || password.trim().isEmpty()) {
+            throw new RuntimeException("Password is required!");
+        }
+        String pass = password.trim();
+        if (pass.length() < 8) {
+            throw new RuntimeException("Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number and one special character.");
+        }
+        boolean hasUpper = pass.matches(".*[A-Z].*");
+        boolean hasLower = pass.matches(".*[a-z].*");
+        boolean hasDigit = pass.matches(".*[0-9].*");
+        boolean hasSpecial = pass.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?].*");
+        if (!hasUpper || !hasLower || !hasDigit || !hasSpecial) {
+            throw new RuntimeException("Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number and one special character.");
+        }
+    }
+
+    public void validateDateOfBirth(String dob) {
+        if (dob == null || dob.trim().isEmpty()) {
+            throw new RuntimeException("Date of Birth is required!");
+        }
+        try {
+            LocalDate birthDate = LocalDate.parse(dob.trim());
+            LocalDate today = LocalDate.now();
+            if (birthDate.isAfter(today)) {
+                throw new RuntimeException("Age must be between 18 and 80 years.");
+            }
+            int age = Period.between(birthDate, today).getYears();
+            if (age < 18 || age > 80) {
+                throw new RuntimeException("Age must be between 18 and 80 years.");
+            }
+        } catch (DateTimeParseException e) {
+            throw new RuntimeException("Age must be between 18 and 80 years.");
+        }
+    }
+
     public Candidate registerEmployee(Candidate candidate) {
         if (candidate.getFirstName() == null || candidate.getFirstName().trim().isEmpty()) {
             throw new RuntimeException("First Name is required!");
         }
-        if (candidate.getFirstName().matches(".*\\d.*")) {
+        String firstName = candidate.getFirstName().trim();
+        if (firstName.matches(".*\\d.*")) {
             throw new RuntimeException("First Name must contain letters only and cannot contain numbers.");
         }
-        if (candidate.getLastName() == null || candidate.getLastName().trim().isEmpty()) {
-            throw new RuntimeException("Last Name is required!");
+        if ("admin".equalsIgnoreCase(firstName)) {
+            throw new RuntimeException("Registration with this email is not allowed.");
         }
-        if (candidate.getLastName().matches(".*\\d.*")) {
+
+        String lastName = candidate.getLastName() != null ? candidate.getLastName().trim() : "";
+        if (!lastName.isEmpty() && lastName.matches(".*\\d.*")) {
             throw new RuntimeException("Last Name must contain letters only and cannot contain numbers.");
         }
+
         if (candidate.getRole() == null || candidate.getRole().trim().isEmpty()) {
-            throw new RuntimeException("Role is required!");
+            throw new RuntimeException("Please select a valid job role.");
         }
-        if (candidate.getDob() == null || candidate.getDob().trim().isEmpty()) {
-            throw new RuntimeException("Date of Birth is required!");
+        String role = candidate.getRole().trim();
+        boolean isValidRole = VALID_JOB_ROLES.stream().anyMatch(r -> r.equalsIgnoreCase(role));
+        if (!isValidRole) {
+            throw new RuntimeException("Please select a valid job role.");
         }
+
+        validateDateOfBirth(candidate.getDob());
+
         if (candidate.getEmployeeId() == null || candidate.getEmployeeId().trim().isEmpty()) {
             throw new RuntimeException("Employee ID is required!");
         }
+        String empId = candidate.getEmployeeId().trim();
+
         if (candidate.getEmail() == null || candidate.getEmail().trim().isEmpty()) {
             throw new RuntimeException("Company Email is required!");
         }
-        if (candidate.getPassword() == null || candidate.getPassword().trim().isEmpty()) {
-            throw new RuntimeException("Password is required!");
-        }
-
         String email = candidate.getEmail().trim();
-        String empId = candidate.getEmployeeId().trim();
 
-        // 1. Company Email Validation (*@company.com)
         if (!email.toLowerCase().endsWith("@company.com")) {
             throw new RuntimeException("Only company email addresses ending with @company.com are allowed.");
         }
-
-        // 2. Reject Duplicate Email
-        List<Candidate> existingByEmail = candidateRepository.findByEmailIgnoreCase(email);
-        if (!existingByEmail.isEmpty()) {
-            throw new RuntimeException("An employee with this email already exists.");
+        if ("admin@company.com".equalsIgnoreCase(email)) {
+            throw new RuntimeException("Registration with this email is not allowed.");
         }
 
-        // 3. Reject Duplicate Employee ID
-        List<Candidate> existingByEmpId = candidateRepository.findByEmployeeId(empId);
-        if (!existingByEmpId.isEmpty()) {
-            throw new RuntimeException("An employee with this employee ID already exists.");
+        validatePasswordPolicy(candidate.getPassword());
+
+        Optional<Candidate> existingComposite = candidateRepository.findByEmployeeIdIgnoreCaseAndEmailIgnoreCase(empId, email);
+        if (existingComposite.isPresent()) {
+            throw new RuntimeException("An employee with this Employee ID and Email already exists.");
         }
 
-        candidate.setFirstName(candidate.getFirstName().trim());
-        candidate.setLastName(candidate.getLastName().trim());
-        candidate.setRole(candidate.getRole().trim());
+        candidate.setFirstName(firstName);
+        candidate.setLastName(lastName);
+        candidate.setRole(role);
         candidate.setDob(candidate.getDob().trim());
         candidate.setEmployeeId(empId);
         candidate.setEmail(email);
-        candidate.setPassword(candidate.getPassword().trim());
+        candidate.setPassword(passwordEncoder.encode(candidate.getPassword().trim()));
         if (candidate.getJobId() == null) {
             candidate.setJobId(0L);
         }
@@ -125,6 +207,10 @@ public class CandidateService {
 
         if (candidate.getLastName() != null && candidate.getLastName().matches(".*\\d.*")) {
             throw new RuntimeException("Last Name must contain letters only and cannot contain numbers.");
+        }
+
+        if (candidate.getDob() != null && !candidate.getDob().trim().isEmpty()) {
+            validateDateOfBirth(candidate.getDob());
         }
 
         String empId = candidate.getEmployeeId().trim();
@@ -385,12 +471,17 @@ public class CandidateService {
         String emailTrimmed = email.trim();
         String passTrimmed = password.trim();
 
-        // 1. Employee login requires a valid company email address
+        // 1. Reject admin accounts from candidate login
+        if ("admin@company.com".equalsIgnoreCase(emailTrimmed)) {
+            throw new RuntimeException("Admin accounts cannot log in through employee login.");
+        }
+
+        // 2. Employee login requires a valid company email address
         if (!emailTrimmed.contains("@") || !emailTrimmed.toLowerCase().endsWith("@company.com")) {
             throw new RuntimeException("Only company email addresses ending with @company.com are allowed.");
         }
 
-        // 2. Query strictly by EMAIL ONLY (Employee ID is NOT accepted as login identifier)
+        // 3. Query strictly by EMAIL ONLY
         List<Candidate> list = candidateRepository.findByEmailIgnoreCase(emailTrimmed);
 
         if (list.isEmpty()) {
@@ -398,11 +489,18 @@ public class CandidateService {
         }
 
         for (Candidate cand : list) {
+            if ("ADMIN".equalsIgnoreCase(cand.getRole())) {
+                throw new RuntimeException("Admin accounts cannot log in through employee login.");
+            }
             if (cand.getPassword() == null || cand.getPassword().trim().isEmpty()) {
-                cand.setPassword(passTrimmed);
+                cand.setPassword(passwordEncoder.encode(passTrimmed));
                 candidateRepository.save(cand);
                 return cand;
-            } else if (cand.getPassword().trim().equals(passTrimmed)) {
+            } else if (passwordEncoder.matches(passTrimmed, cand.getPassword()) || cand.getPassword().trim().equals(passTrimmed)) {
+                if (cand.getPassword().trim().equals(passTrimmed) && !cand.getPassword().startsWith("$2a$")) {
+                    cand.setPassword(passwordEncoder.encode(passTrimmed));
+                    candidateRepository.save(cand);
+                }
                 return cand;
             }
         }

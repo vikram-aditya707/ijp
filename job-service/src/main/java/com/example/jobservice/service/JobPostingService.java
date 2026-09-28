@@ -14,7 +14,51 @@ public class JobPostingService {
     @Autowired
     private JobPostingRepository jobPostingRepository;
 
+    public synchronized String generateNextJobCode() {
+        List<JobPosting> allJobs = jobPostingRepository.findAll();
+        int maxCodeNum = 100;
+        for (JobPosting job : allJobs) {
+            if (job.getJobId() != null && job.getJobId().trim().toUpperCase().startsWith("JOB")) {
+                String numPart = job.getJobId().trim().substring(3);
+                try {
+                    int num = Integer.parseInt(numPart);
+                    if (num > maxCodeNum) {
+                        maxCodeNum = num;
+                    }
+                } catch (NumberFormatException e) {
+                    // Ignore non-numeric job code suffixes
+                }
+            }
+        }
+        return "JOB" + (maxCodeNum + 1);
+    }
+
     public JobPosting createJob(JobPosting jobPosting) {
+        if (jobPosting.getDesignation() == null || jobPosting.getDesignation().trim().isEmpty()) {
+            throw new RuntimeException("Designation / Role is required.");
+        }
+        if (jobPosting.getDescription() == null || jobPosting.getDescription().trim().isEmpty()) {
+            throw new RuntimeException("Job description is required.");
+        }
+        if (jobPosting.getLocation() == null || jobPosting.getLocation().trim().isEmpty()) {
+            throw new RuntimeException("Location is required.");
+        }
+        if (jobPosting.getExperience() == null || jobPosting.getExperience().trim().isEmpty()) {
+            throw new RuntimeException("Required experience is required.");
+        }
+        if (jobPosting.getSkillSet() == null || jobPosting.getSkillSet().trim().isEmpty()) {
+            throw new RuntimeException("Required skill set is required.");
+        }
+        if (jobPosting.getSalaryMin() == null || jobPosting.getSalaryMin() <= 0) {
+            throw new RuntimeException("Minimum salary is required.");
+        }
+        if (jobPosting.getSalaryMax() == null || jobPosting.getSalaryMax() <= 0) {
+            throw new RuntimeException("Maximum salary is required.");
+        }
+
+        // Auto-generate Job Code (backend source of truth)
+        jobPosting.setJobId(generateNextJobCode());
+
         if (jobPosting.getStatus() == null || jobPosting.getStatus().trim().isEmpty()) {
             jobPosting.setStatus("OPEN");
         }
