@@ -211,18 +211,11 @@ export class ApplyComponent implements OnInit {
 
     this.candidateService.applyForJob(this.candidate).subscribe({
       next: (response) => {
-        this.isSubmitting = false;
-        this.successMessage = `Application submitted successfully for candidate ${response.firstName} ${response.lastName || ''}!`;
-        const currentUser = this.authService.currentUserValue;
-        this.candidate = {
-          firstName: currentUser?.role === 'EMPLOYEE' ? this.candidate.firstName : '',
-          lastName: currentUser?.role === 'EMPLOYEE' ? this.candidate.lastName : '',
-          employeeId: currentUser?.role === 'EMPLOYEE' ? this.candidate.employeeId : '',
-          dob: '',
-          email: currentUser?.role === 'EMPLOYEE' ? this.candidate.email : '',
-          password: '',
-          jobId: this.candidate.jobId
-        };
+        const successMsg = `Application submitted successfully for candidate ${response.firstName} ${response.lastName || ''}!`;
+        this.successMessage = successMsg;
+        setTimeout(() => {
+          this.router.navigate(['/'], { queryParams: { applied: 'true', message: successMsg } });
+        }, 1500);
       },
       error: (err) => {
         this.isSubmitting = false;

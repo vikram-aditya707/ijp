@@ -1,1 +1,26 @@
 /* Add Job Styles */
+.extra-small {
+  font-size: 0.8rem;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.typeahead-suggestions {
+  z-index: 1050;
+  max-height: 220px;
+  overflow-y: auto;
+  border-top: none;
+  top: 100%;
+  left: 0;
+}
+
+.typeahead-suggestions .list-group-item.active {
+  background-color: #0d6efd;
+  color: #fff;
+}
+
+.typeahead-suggestions .list-group-item.active i {
+  color: #fff !important;
+}

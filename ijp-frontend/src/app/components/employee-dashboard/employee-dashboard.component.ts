@@ -38,14 +38,14 @@ export class EmployeeDashboardComponent implements OnInit {
     if (this.currentUser && this.currentUser.email) {
       this.candidateService.getCandidatesByEmail(this.currentUser.email).subscribe({
         next: (apps) => {
-          this.myApplications = apps;
+          this.myApplications = (apps || []).filter(app => app.jobId && app.jobId > 0);
           this.isLoading = false;
         },
         error: (err) => {
           if (this.currentUser?.id) {
             this.candidateService.getCandidateById(this.currentUser.id).subscribe({
               next: (cand) => {
-                this.myApplications = [cand];
+                this.myApplications = (cand && cand.jobId && cand.jobId > 0) ? [cand] : [];
                 this.isLoading = false;
               },
               error: (e) => {

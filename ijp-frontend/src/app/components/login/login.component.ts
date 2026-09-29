@@ -22,6 +22,9 @@ export class LoginComponent implements OnInit {
   adminUsername = '';
   adminPassword = '';
 
+  showEmployeePassword = false;
+  showAdminPassword = false;
+
   errorMessage = '';
   successMessage = '';
   isLoading = false;

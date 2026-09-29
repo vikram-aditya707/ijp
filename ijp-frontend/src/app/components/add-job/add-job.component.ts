@@ -73,21 +73,80 @@ export class AddJobComponent implements OnInit {
     });
   }
 
-  // Typeahead for Designation
-  onDesignationInput(): void {
-    this.selectedDesignationIndex = -1;
-    const val = (this.job.designation || '').trim().toLowerCase();
+  standardDesignations: string[] = [
+    'Software Engineer',
+    'Software Developer',
+    'Java Developer',
+    'Java Backend Developer',
+    'Java Full Stack Developer',
+    'Python Developer',
+    '.NET Developer',
+    'C# Developer',
+    'Angular Developer',
+    'React Developer',
+    'Frontend Developer',
+    'Backend Developer',
+    'Full Stack Developer',
+    'QA Engineer',
+    'Test Engineer',
+    'Automation Test Engineer',
+    'DevOps Engineer',
+    'Cloud Engineer',
+    'Data Analyst',
+    'Data Engineer',
+    'Data Scientist',
+    'Database Administrator',
+    'UI/UX Developer',
+    'Business Analyst',
+    'System Engineer',
+    'Network Engineer',
+    'Cyber Security Engineer',
+    'Machine Learning Engineer',
+    'AI Engineer',
+    'Technical Support Engineer',
+    'Project Engineer',
+    'Employee (General)'
+  ];
+
+  getAllDesignationNames(): string[] {
+    const activeNames = this.activeDesignations.map(d => d.name);
+    const combined = new Set([...activeNames, ...this.standardDesignations]);
+    return Array.from(combined);
+  }
+
+  filterDesignations(val: string): void {
+    const allNames = this.getAllDesignationNames();
     if (!val) {
-      this.filteredDesignations = [];
-      this.showDesignationDropdown = false;
+      this.filteredDesignations = [...allNames];
       return;
     }
-
-    const allNames = this.activeDesignations.map(d => d.name);
     const prefixMatches = allNames.filter(n => n.toLowerCase().startsWith(val));
     const otherMatches = allNames.filter(n => !n.toLowerCase().startsWith(val) && n.toLowerCase().includes(val));
     this.filteredDesignations = [...prefixMatches, ...otherMatches];
-    this.showDesignationDropdown = this.filteredDesignations.length > 0;
+  }
+
+  openDesignationDropdown(): void {
+    const val = (this.job.designation || '').trim().toLowerCase();
+    this.filterDesignations(val);
+    this.showDesignationDropdown = true;
+    this.selectedDesignationIndex = -1;
+  }
+
+  toggleDesignationDropdown(event: Event): void {
+    event.stopPropagation();
+    if (this.showDesignationDropdown) {
+      this.showDesignationDropdown = false;
+    } else {
+      this.openDesignationDropdown();
+    }
+  }
+
+  // Typeahead & Dropdown for Designation
+  onDesignationInput(): void {
+    this.selectedDesignationIndex = -1;
+    const val = (this.job.designation || '').trim().toLowerCase();
+    this.filterDesignations(val);
+    this.showDesignationDropdown = true;
   }
 
   selectDesignation(name: string): void {
@@ -98,7 +157,12 @@ export class AddJobComponent implements OnInit {
   }
 
   onDesignationKeyDown(event: KeyboardEvent): void {
-    if (!this.showDesignationDropdown || this.filteredDesignations.length === 0) return;
+    if (!this.showDesignationDropdown || this.filteredDesignations.length === 0) {
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        this.openDesignationDropdown();
+      }
+      return;
+    }
 
     if (event.key === 'ArrowDown') {
       event.preventDefault();

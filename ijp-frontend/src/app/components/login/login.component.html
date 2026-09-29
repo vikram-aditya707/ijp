@@ -57,7 +57,12 @@
 
         <div class="mb-4">
           <label for="empPass" class="form-label fw-semibold small">Password</label>
-          <input type="password" class="form-control" id="empPass" name="employeePassword" [(ngModel)]="employeePassword" placeholder="Enter Password" required autocomplete="new-password" />
+          <div class="input-group">
+            <input [type]="showEmployeePassword ? 'text' : 'password'" class="form-control" id="empPass" name="employeePassword" [(ngModel)]="employeePassword" placeholder="Enter Password" required autocomplete="new-password" />
+            <button type="button" class="btn btn-outline-secondary" (click)="showEmployeePassword = !showEmployeePassword" tabindex="-1">
+              <i [class]="showEmployeePassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'"></i>
+            </button>
+          </div>
         </div>
 
         <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold" [disabled]="isLoading">
@@ -81,7 +86,12 @@
 
         <div class="mb-4">
           <label for="adminPass" class="form-label fw-semibold small">Password</label>
-          <input type="password" class="form-control" id="adminPass" name="adminPassword" [(ngModel)]="adminPassword" placeholder="Enter Admin Password" required autocomplete="new-password" />
+          <div class="input-group">
+            <input [type]="showAdminPassword ? 'text' : 'password'" class="form-control" id="adminPass" name="adminPassword" [(ngModel)]="adminPassword" placeholder="Enter Admin Password" required autocomplete="new-password" />
+            <button type="button" class="btn btn-outline-secondary" (click)="showAdminPassword = !showAdminPassword" tabindex="-1">
+              <i [class]="showAdminPassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'"></i>
+            </button>
+          </div>
         </div>
 
         <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold" [disabled]="isLoading">

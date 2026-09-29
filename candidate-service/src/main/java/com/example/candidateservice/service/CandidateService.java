@@ -160,9 +160,15 @@ public class CandidateService {
 
         validatePasswordPolicy(candidate.getPassword());
 
-        Optional<Candidate> existingComposite = candidateRepository.findByEmployeeIdIgnoreCaseAndEmailIgnoreCase(empId, email);
-        if (existingComposite.isPresent()) {
-            throw new RuntimeException("An employee with this Employee ID and Email already exists.");
+        boolean empIdExists = !candidateRepository.findByEmployeeIdIgnoreCase(empId).isEmpty();
+        boolean emailExists = !candidateRepository.findByEmailIgnoreCase(email).isEmpty();
+
+        if (empIdExists && emailExists) {
+            throw new RuntimeException("Employee ID and email already exist. Cannot register.");
+        } else if (empIdExists) {
+            throw new RuntimeException("Employee ID already exists. Cannot register.");
+        } else if (emailExists) {
+            throw new RuntimeException("This email is already registered. Cannot register.");
         }
 
         candidate.setFirstName(firstName);
@@ -321,11 +327,17 @@ public class CandidateService {
     }
 
     public List<Candidate> getCandidatesByEmail(String email) {
-        return candidateRepository.findByEmailIgnoreCase(email.trim());
+        if (email == null) return Collections.emptyList();
+        return candidateRepository.findByEmailIgnoreCase(email.trim()).stream()
+                .filter(c -> c.getJobId() != null && c.getJobId() > 0L)
+                .collect(Collectors.toList());
     }
 
     public List<Candidate> getCandidatesByEmployeeId(String employeeId) {
-        return candidateRepository.findByEmployeeId(employeeId.trim());
+        if (employeeId == null) return Collections.emptyList();
+        return candidateRepository.findByEmployeeId(employeeId.trim()).stream()
+                .filter(c -> c.getJobId() != null && c.getJobId() > 0L)
+                .collect(Collectors.toList());
     }
 
     @Transactional

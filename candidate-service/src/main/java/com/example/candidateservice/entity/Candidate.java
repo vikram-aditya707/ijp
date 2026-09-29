@@ -9,7 +9,8 @@ import jakarta.persistence.UniqueConstraint;
 
 @Entity
 @Table(name = "candidate", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"employeeId", "email"})
+    @UniqueConstraint(name = "UK_candidate_employeeId", columnNames = {"employeeId"}),
+    @UniqueConstraint(name = "UK_candidate_email", columnNames = {"email"})
 })
 public class Candidate {
 

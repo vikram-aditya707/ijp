@@ -59,11 +59,24 @@ public class CandidateController {
         try {
             Candidate savedCandidate = candidateService.registerEmployee(candidate);
             return new ResponseEntity<>(savedCandidate, HttpStatus.CREATED);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("message", "Employee ID and email already exist. Cannot register.");
+            return new ResponseEntity<>(error, HttpStatus.CONFLICT);
         } catch (RuntimeException e) {
             Map<String, String> error = new HashMap<>();
-            error.put("message", e.getMessage());
-            HttpStatus status = (e.getMessage() != null && e.getMessage().toLowerCase().contains("already exists")) ? HttpStatus.CONFLICT : HttpStatus.BAD_REQUEST;
+            String msg = e.getMessage();
+            if (msg == null || msg.toLowerCase().contains("sql") || msg.toLowerCase().contains("hibernate") || msg.toLowerCase().contains("duplicate entry") || msg.toLowerCase().contains("could not execute")) {
+                msg = "Employee ID and email already exist. Cannot register.";
+            }
+            error.put("message", msg);
+            boolean isDuplicate = msg.toLowerCase().contains("already exist") || msg.toLowerCase().contains("already registered");
+            HttpStatus status = isDuplicate ? HttpStatus.CONFLICT : HttpStatus.BAD_REQUEST;
             return new ResponseEntity<>(error, status);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("message", "Unable to complete registration. Please try again.");
+            return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -72,10 +85,24 @@ public class CandidateController {
         try {
             Candidate savedCandidate = candidateService.applyForJob(candidate);
             return new ResponseEntity<>(savedCandidate, HttpStatus.CREATED);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("message", "An employee with this email or employee ID already exists.");
+            return new ResponseEntity<>(error, HttpStatus.CONFLICT);
         } catch (RuntimeException e) {
             Map<String, String> error = new HashMap<>();
-            error.put("message", e.getMessage());
-            return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+            String msg = e.getMessage();
+            if (msg == null || msg.toLowerCase().contains("sql") || msg.toLowerCase().contains("hibernate") || msg.toLowerCase().contains("duplicate entry") || msg.toLowerCase().contains("could not execute")) {
+                msg = "An employee with this email or employee ID already exists.";
+            }
+            error.put("message", msg);
+            boolean isDuplicate = msg.toLowerCase().contains("already exists") || msg.toLowerCase().contains("already registered");
+            HttpStatus status = isDuplicate ? HttpStatus.CONFLICT : HttpStatus.BAD_REQUEST;
+            return new ResponseEntity<>(error, status);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("message", "Unable to complete job application. Please try again.");
+            return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

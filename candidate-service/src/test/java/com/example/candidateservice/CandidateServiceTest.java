@@ -218,14 +218,53 @@ public class CandidateServiceTest {
     }
 
     @Test
-    public void test19_shouldFailWhenDuplicateEmployeeIdAndEmail() {
+    public void test19_shouldRejectSameEmployeeIdAndSameEmail() {
         Candidate existing = new Candidate(1L, "Existing", "User", "EMP707", "1990-01-01", "aditya@company.com", "Employee@123", "Software Engineer", 0L);
         Candidate newCand = new Candidate(null, "Aditya", "Singh", "EMP707", "1995-08-12", "aditya@company.com", "Employee@123", "Software Engineer", 0L);
 
-        when(candidateRepository.findByEmployeeIdIgnoreCaseAndEmailIgnoreCase("EMP707", "aditya@company.com")).thenReturn(Optional.of(existing));
+        when(candidateRepository.findByEmployeeIdIgnoreCase("EMP707")).thenReturn(Collections.singletonList(existing));
+        when(candidateRepository.findByEmailIgnoreCase("aditya@company.com")).thenReturn(Collections.singletonList(existing));
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.registerEmployee(newCand));
-        assertTrue(exception.getMessage().contains("An employee with this Employee ID and Email already exists"));
+        assertTrue(exception.getMessage().contains("Employee ID and email already exist. Cannot register."));
+    }
+
+    @Test
+    public void test19a_shouldRejectExistingEmployeeIdWithNewEmail() {
+        Candidate existing = new Candidate(1L, "Existing", "User", "EMP101", "1990-01-01", "aditya@company.com", "Employee@123", "Software Engineer", 0L);
+        Candidate newCand = new Candidate(null, "Aditya", "Singh", "EMP101", "1995-08-12", "newemail@company.com", "Employee@123", "Software Engineer", 0L);
+
+        when(candidateRepository.findByEmployeeIdIgnoreCase("EMP101")).thenReturn(Collections.singletonList(existing));
+        when(candidateRepository.findByEmailIgnoreCase("newemail@company.com")).thenReturn(Collections.emptyList());
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.registerEmployee(newCand));
+        assertTrue(exception.getMessage().contains("Employee ID already exists. Cannot register."));
+    }
+
+    @Test
+    public void test19b_shouldRejectNewEmployeeIdWithExistingEmail() {
+        Candidate existing = new Candidate(1L, "Existing", "User", "EMP101", "1990-01-01", "aditya@company.com", "Employee@123", "Software Engineer", 0L);
+        Candidate newCand = new Candidate(null, "Aditya", "Singh", "EMP999", "1995-08-12", "aditya@company.com", "Employee@123", "Software Engineer", 0L);
+
+        when(candidateRepository.findByEmployeeIdIgnoreCase("EMP999")).thenReturn(Collections.emptyList());
+        when(candidateRepository.findByEmailIgnoreCase("aditya@company.com")).thenReturn(Collections.singletonList(existing));
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> candidateService.registerEmployee(newCand));
+        assertTrue(exception.getMessage().contains("This email is already registered. Cannot register."));
+    }
+
+    @Test
+    public void test19d_shouldAllowNewEmployeeIdWithNewEmail() {
+        Candidate newCand = new Candidate(null, "Aditya", "Singh", "EMP555", "1995-08-12", "unique.email@company.com", "Employee@123", "Software Engineer", 0L);
+
+        when(candidateRepository.findByEmployeeIdIgnoreCase("EMP555")).thenReturn(Collections.emptyList());
+        when(candidateRepository.findByEmailIgnoreCase("unique.email@company.com")).thenReturn(Collections.emptyList());
+        when(candidateRepository.save(any(Candidate.class))).thenAnswer(i -> i.getArgument(0));
+
+        Candidate registered = candidateService.registerEmployee(newCand);
+        assertNotNull(registered);
+        assertEquals("EMP555", registered.getEmployeeId());
+        assertEquals("unique.email@company.com", registered.getEmail());
     }
 
     // ==================================================

@@ -121,6 +121,32 @@ public class CandidateControllerTest {
                 .andExpect(jsonPath("$.message").value("Only company email addresses ending with @company.com are allowed."));
     }
 
+    @Test
+    public void shouldReturn409OnDuplicateEmployeeRegister() throws Exception {
+        Candidate candidate = new Candidate(null, "Aditya", "Singh", "EMP707", "1995-08-12", "aditya@company.com", "Pass@123", 0L);
+
+        when(candidateService.registerEmployee(any(Candidate.class))).thenThrow(new RuntimeException("Employee ID and email already exist. Cannot register."));
+
+        mockMvc.perform(post("/api/candidates/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(candidate)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Employee ID and email already exist. Cannot register."));
+    }
+
+    @Test
+    public void shouldReturn409OnDataIntegrityViolationException() throws Exception {
+        Candidate candidate = new Candidate(null, "Aditya", "Singh", "EMP707", "1995-08-12", "aditya@company.com", "Pass@123", 0L);
+
+        when(candidateService.registerEmployee(any(Candidate.class))).thenThrow(new org.springframework.dao.DataIntegrityViolationException("could not execute statement [Duplicate entry]"));
+
+        mockMvc.perform(post("/api/candidates/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(candidate)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Employee ID and email already exist. Cannot register."));
+    }
+
     // ==================================================
     // 3. APPLY FOR JOB CONTROLLER TESTS
     // ==================================================

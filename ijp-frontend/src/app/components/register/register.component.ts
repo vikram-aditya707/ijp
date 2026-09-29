@@ -26,6 +26,8 @@ export class RegisterComponent {
   };
 
   confirmPassword = '';
+  showPassword = false;
+  showConfirmPassword = false;
   isSubmitting = false;
   errorMessage = '';
   successMessage = '';
@@ -88,27 +90,42 @@ export class RegisterComponent {
     return maxDate.toISOString().split('T')[0];
   }
 
-  // Typeahead Role Handlers
-  onRoleInput(): void {
+  // Typeahead & Dropdown Role Handlers
+  openRoleDropdown(): void {
+    const val = (this.roleInput || '').trim().toLowerCase();
+    this.filterRoles(val);
+    this.showRoleDropdown = true;
     this.selectedRoleIndex = -1;
-    const val = this.roleInput.trim().toLowerCase();
-    if (!val) {
-      this.filteredRoles = [];
+  }
+
+  toggleRoleDropdown(event: Event): void {
+    event.stopPropagation();
+    if (this.showRoleDropdown) {
       this.showRoleDropdown = false;
-      this.candidate.role = '';
+    } else {
+      this.openRoleDropdown();
+    }
+  }
+
+  filterRoles(val: string): void {
+    if (!val) {
+      this.filteredRoles = [...this.availableRoles];
       return;
     }
-
     const prefixMatches = this.availableRoles.filter(r => r.toLowerCase().startsWith(val));
     const otherMatches = this.availableRoles.filter(r => !r.toLowerCase().startsWith(val) && r.toLowerCase().includes(val));
     this.filteredRoles = [...prefixMatches, ...otherMatches];
 
-    // Fallback: If user enters text matching no predefined role, offer "Employee (General)"
     if (this.filteredRoles.length === 0) {
       this.filteredRoles = ['Employee (General)'];
     }
+  }
 
-    this.showRoleDropdown = this.filteredRoles.length > 0;
+  onRoleInput(): void {
+    this.selectedRoleIndex = -1;
+    const val = (this.roleInput || '').trim().toLowerCase();
+    this.filterRoles(val);
+    this.showRoleDropdown = true;
 
     const exactMatch = this.availableRoles.find(r => r.toLowerCase() === val);
     if (exactMatch) {
@@ -127,7 +144,12 @@ export class RegisterComponent {
   }
 
   onRoleKeyDown(event: KeyboardEvent): void {
-    if (!this.showRoleDropdown || this.filteredRoles.length === 0) return;
+    if (!this.showRoleDropdown || this.filteredRoles.length === 0) {
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        this.openRoleDropdown();
+      }
+      return;
+    }
 
     if (event.key === 'ArrowDown') {
       event.preventDefault();
@@ -153,10 +175,24 @@ export class RegisterComponent {
       if (exact) {
         this.roleInput = exact;
         this.candidate.role = exact;
-      } else {
-        this.candidate.role = '';
       }
     }, 200);
+  }
+
+  // Duplicate Error Helpers
+  isDuplicateEmpIdError(): boolean {
+    const msg = (this.errorMessage || '').toLowerCase();
+    return msg.includes('employee id') && !msg.includes('email') && (msg.includes('already exist') || msg.includes('registered'));
+  }
+
+  isDuplicateEmailError(): boolean {
+    const msg = (this.errorMessage || '').toLowerCase();
+    return msg.includes('email') && !msg.includes('employee id') && (msg.includes('already exist') || msg.includes('registered'));
+  }
+
+  isDuplicateCompositeError(): boolean {
+    const msg = (this.errorMessage || '').toLowerCase();
+    return msg.includes('employee id') && msg.includes('email');
   }
 
   // Password Policy Checks
@@ -279,7 +315,13 @@ export class RegisterComponent {
       },
       error: (err) => {
         this.isSubmitting = false;
-        this.errorMessage = err.error?.message || 'Registration failed. Please check your details and try again.';
+        if (err.status === 409) {
+          this.errorMessage = err.error?.message || 'An employee with this Employee ID and email already exists.';
+        } else if (err.status === 500) {
+          this.errorMessage = 'Unable to complete registration. Please try again.';
+        } else {
+          this.errorMessage = err.error?.message || 'Registration failed. Please check your details and try again.';
+        }
       }
     });
   }

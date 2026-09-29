@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { JobService } from '../../services/job.service';
 import { AuthService } from '../../services/auth.service';
 import { JobPosting } from '../../models/job.model';
@@ -17,15 +17,22 @@ export class HomeComponent implements OnInit {
   openJobs: JobPosting[] = [];
   isLoading = true;
   errorMessage = '';
+  successMessage = '';
 
   constructor(
     private jobService: JobService,
     public authService: AuthService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
     this.fetchOpenJobs();
+    this.route.queryParams.subscribe(params => {
+      if (params['applied'] === 'true' && params['message']) {
+        this.successMessage = params['message'];
+      }
+    });
   }
 
   fetchOpenJobs(): void {
